@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router";
 import { auth } from "@/stores/auth";
 
@@ -81,12 +81,26 @@ const sidebarOpen = ref(false);
 const route = useRoute();
 const router = useRouter();
 
-const links = [
-  { to: "/admin/dashboard", label: "Tổng quan", icon: "📊" },
-  { to: "/admin/books", label: "Quản lý Sách", icon: "📚" },
-  { to: "/admin/borrows", label: "Quản lý Mượn", icon: "📄" },
-  { to: "/admin/users", label: "Quản lý Tài khoản", icon: "👤" },
-];
+// [SỬA LẠI] Dùng computed để lọc menu dựa trên role
+const links = computed(() => {
+  const menu = [
+    { to: "/admin/dashboard", label: "Tổng quan", icon: "📊" },
+    { to: "/admin/books", label: "Quản lý Sách", icon: "📚" },
+    { to: "/admin/publishers", label: "Quản lý NXB", icon: "🏢" }, 
+    { to: "/admin/borrows", label: "Quản lý Mượn", icon: "📄" },
+  ];
+
+  // Chỉ Admin mới thấy menu quản lý con người
+  if (auth.isAdmin()) {
+    menu.push(
+      { to: "/admin/users", label: "Quản lý Tài khoản", icon: "👤" },
+      // [SỬA] Thay icon text "id-card" thành Emoji "🪪" hoặc xóa dòng này nếu bạn muốn gộp vào User
+      { to: "/admin/staff", label: "Hồ sơ Nhân viên", icon: "🪪" } 
+    );
+  }
+  
+  return menu;
+});
 
 function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value;

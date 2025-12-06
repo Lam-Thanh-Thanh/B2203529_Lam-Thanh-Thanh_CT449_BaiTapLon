@@ -15,6 +15,7 @@ import AdminBooks from "@/views/AdminBooks.vue";
 import AdminBorrows from "@/views/AdminBorrows.vue";
 import AdminUsers from "@/views/AdminUsers.vue";
 import AdminStaff from "@/views/AdminStaff.vue"; // mới
+import AdminPublishers from "@/views/AdminPublishers.vue"; // [Thêm]
 
 const routes = [
   { path: "/login", component: Login },
@@ -43,6 +44,7 @@ const routes = [
       { path: "borrows", component: AdminBorrows },
       { path: "users", component: AdminUsers },
       { path: "staff", component: AdminStaff },
+      { path: "publishers", component: AdminPublishers }, // [Thêm]
       { path: "", redirect: "/admin/dashboard" },
     ],
   },
@@ -63,17 +65,26 @@ router.beforeEach((to, from, next) => {
     null
   );
 
-  if (!requiredRole) return next();
-
-  if (!auth.token) {
+  // 1. Chưa đăng nhập -> Login
+  if (requiredRole && !auth.token) {
     return next("/login");
   }
 
-  if (requiredRole === "admin" && !auth.isAdmin()) {
-    return next("/");
+  // 2. Nếu route yêu cầu quyền "admin" (khu vực quản lý)
+  // Cho phép cả Admin và Staff truy cập
+  if (requiredRole === "admin") {
+    if (!auth.isManager()) { 
+      // Nếu không phải quản lý -> Về trang chủ user
+      return next("/");
+    }
   }
-  if (requiredRole === "user" && !auth.isUser()) {
-    return next("/admin/dashboard");
+
+  // 3. Nếu route yêu cầu quyền "user" (trang mượn sách)
+  // Nếu là quản lý (admin/staff) lỡ vào đây -> Về dashboard
+  if (requiredRole === "user") {
+    if (auth.isManager()) {
+      return next("/admin/dashboard");
+    }
   }
 
   next();

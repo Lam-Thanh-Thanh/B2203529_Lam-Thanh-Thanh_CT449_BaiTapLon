@@ -17,7 +17,7 @@ export const auth = reactive({
 
   login(token, user) {
     this.token = token;
-    this.user = user; // { id, username, role, readerId }
+    this.user = user;
     localStorage.setItem(AUTH_KEY, JSON.stringify({ token, user }));
   },
 
@@ -29,6 +29,16 @@ export const auth = reactive({
 
   isAdmin() {
     return this.user?.role === "admin";
+  },
+
+  // [THÊM MỚI] Kiểm tra staff
+  isStaff() {
+    return this.user?.role === "staff";
+  },
+
+  // [THÊM MỚI] Kiểm tra quyền quản trị chung (Admin hoặc Staff đều vào được Dashboard)
+  isManager() {
+    return ["admin", "staff"].includes(this.user?.role);
   },
 
   isUser() {

@@ -5,21 +5,24 @@ class BookService {
     this.Book = client.db().collection("books");
   }
 
-  // Chuẩn hóa dữ liệu đầu vào, chỉ lấy các field hợp lệ
-  extractBookData(payload) {
+extractBookData(payload) {
     const book = {
       title: payload.title,
       author: payload.author,
-      price: typeof payload.price === "number" ? payload.price : undefined,
-      copies: typeof payload.copies === "number" ? payload.copies : undefined, // Số quyển
+      // Dùng Number() để chuyển chuỗi thành số, nếu không có giá trị thì undefined
+      price: payload.price ? Number(payload.price) : undefined,
+      copies: payload.copies ? Number(payload.copies) : undefined, 
       publisher: payload.publisher,
-      publishedYear:
-      typeof payload.publishedYear === "number" ? payload.publishedYear : undefined,
-      tags: Array.isArray(payload.tags) ? payload.tags : undefined,
+      publishedYear: payload.publishedYear ? Number(payload.publishedYear) : undefined,
+      // Nếu payload.tags là chuỗi (do FormData), cần tách mảng nếu cần (tùy logic bạn)
       image: payload.image,
-      // có thể thêm fields khác từ lược đồ sau này
+      // [THÊM] Lưu mã NXB (ObjectId)
+      maNXB: payload.maNXB ? new ObjectId(payload.maNXB) : undefined,
+      // [THÊM] Lưu tên NXB (String) để dễ hiển thị mà không cần join bảng nhiều (tùy chọn)
+      publisher: payload.publisherName,
     };
 
+    // Xóa các trường undefined
     Object.keys(book).forEach(
       (k) => book[k] === undefined && delete book[k]
     );

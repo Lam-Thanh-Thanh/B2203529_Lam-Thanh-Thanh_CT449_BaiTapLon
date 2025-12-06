@@ -7,6 +7,11 @@ const getService = () => new BookService(MongoDB.getClient());
 exports.create = async (req, res, next) => {
   try {
     const service = getService();
+    // Nếu có file upload, tạo đường dẫn URL đầy đủ (hoặc đường dẫn tương đối)
+    if (req.file) {
+      req.body.image = `/uploads/${req.file.filename}`;
+    }
+    
     const book = await service.create(req.body);
     res.status(201).json(book);
   } catch (err) {
@@ -38,6 +43,12 @@ exports.findOne = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const service = getService();
+    
+    // Nếu có file upload mới thì cập nhật, không thì giữ nguyên ảnh cũ
+    if (req.file) {
+req.body.image = `/uploads/${req.file.filename}`;
+    }
+
     const book = await service.update(req.params.id, req.body);
     if (!book) return res.status(404).json({ message: "Book not found" });
     res.json(book);

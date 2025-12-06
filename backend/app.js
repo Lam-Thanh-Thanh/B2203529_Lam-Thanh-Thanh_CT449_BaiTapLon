@@ -8,11 +8,17 @@ const usersRouter = require("./app/routes/user.route");
 const statsRouter = require("./app/routes/stats.route");
 const meRouter = require("./app/routes/me.route");
 const staffRouter = require("./app/routes/staff.route");
+const publishersRouter = require("./app/routes/publisher.route"); // [Thêm]
+
+const path = require("path"); // [Thêm dòng này]
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+//Cấu hình để truy cập ảnh qua đường dẫn http://localhost:3000/uploads/ten-anh.jpg
+app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
 
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to book borrow application." });
@@ -26,6 +32,7 @@ app.use("/api/readers", readersRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/stats", statsRouter);
 app.use("/api/me", meRouter);
+app.use("/api/publishers", publishersRouter); // [Thêm]
 
 // 404 + error handler như trước
 app.use((req, res) => res.status(404).json({ message: "Resource not found" }));

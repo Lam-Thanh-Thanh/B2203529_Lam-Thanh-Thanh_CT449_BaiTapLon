@@ -58,9 +58,6 @@
                   <div>
                     <div class="font-bold text-slate-800 line-clamp-1 text-base">{{ book.title }}</div>
                     <div class="text-slate-500 text-xs">{{ book.author }}</div>
-                    <div class="text-indigo-600 text-[10px] mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded inline-block">
-                        {{ book.publisher }}
-                    </div>
                   </div>
                 </div>
               </td>
@@ -71,17 +68,10 @@
               <td class="p-4 text-right font-mono text-slate-700">{{ book.price?.toLocaleString() }} đ</td>
               <td class="p-4 text-center">
                 <div class="flex justify-center gap-2">
-                  <button @click="editBook(book)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Sửa">
-                    ✏️
-                  </button>
-                  <button @click="deleteBook(book._id)" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition" title="Xóa">
-                    🗑️
-                  </button>
+                  <button @click="editBook(book)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Sửa">✏️</button>
+                  <button @click="deleteBook(book._id)" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition" title="Xóa">🗑️</button>
                 </div>
               </td>
-            </tr>
-            <tr v-if="!filteredBooks.length">
-                <td colspan="5" class="p-8 text-center text-slate-400">Không tìm thấy sách nào.</td>
             </tr>
           </tbody>
         </table>
@@ -105,10 +95,15 @@
                         <label class="label">Tác giả <span class="text-rose-500">*</span></label>
                         <input v-model="form.author" class="input" required />
                     </div>
-                     <div>
-                        <label class="label">Nhà xuất bản</label>
-                        <input v-model="form.publisher" class="input" />
-                    </div>
+                    <div>
+                      <label class="label">Nhà xuất bản</label>
+                      <select v-model="form.maNXB" class="input bg-white">
+                          <option value="" disabled>-- Chọn NXB --</option>
+                          <option v-for="nx in publishers" :key="nx._id" :value="nx._id">
+                              {{ nx.tenNXB }}
+                          </option>
+                      </select>
+                  </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-4">
@@ -127,9 +122,15 @@
                 </div>
 
                 <div>
-                    <label class="label">Link Ảnh bìa (URL)</label>
-                    <input v-model="form.image" class="input" placeholder="https://example.com/image.jpg" />
-                    <p class="text-[11px] text-slate-400 mt-1">Copy địa chỉ hình ảnh từ mạng và dán vào đây.</p>
+                    <label class="label">Ảnh bìa</label>
+                    <input 
+                      type="file" 
+                      ref="fileInput"
+                      @change="handleFileUpload" 
+                      class="input file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" 
+                      accept="image/*" 
+                    />
+                    <p class="text-[11px] text-slate-400 mt-1">Chọn ảnh từ máy tính (JPG, PNG, WEBP).</p>
                 </div>
 
                 <div class="pt-4 flex items-center justify-end gap-3">
@@ -148,19 +149,17 @@
                 <h3 class="font-bold text-slate-800 mb-4">Xem trước ảnh bìa</h3>
                 <div class="w-full aspect-[2/3] bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
                     
-                    <img v-if="form.image" :src="form.image" class="w-full h-full object-cover" @error="imageError = true" />
+                    <img v-if="previewImage" :src="previewImage" class="w-full h-full object-cover" />
+                    <img v-else-if="form.image" :src="form.image" class="w-full h-full object-cover" />
                     
-                    <div v-if="!form.image || imageError" class="text-slate-400 flex flex-col items-center">
+                    <div v-else class="text-slate-400 flex flex-col items-center">
                         <span class="text-4xl mb-2">🖼️</span>
                         <span class="text-xs">Chưa có ảnh</span>
                     </div>
-
-                    <div v-if="form.image" class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div>
                 </div>
                 <div class="mt-4 text-sm text-slate-600 font-medium line-clamp-2">
                     {{ form.title || 'Tên sách sẽ hiện ở đây' }}
                 </div>
-                <div class="text-xs text-slate-400">{{ form.author || 'Tác giả' }}</div>
             </div>
         </div>
     </div>
@@ -171,18 +170,22 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import BookService from "@/services/book.service";
 import { showToast } from "@/stores/toast";
+import PublisherService from "@/services/publisher.service"; // [Thêm]
 
-// State
-const viewMode = ref("list"); // 'list' | 'form'
+const viewMode = ref("list");
 const books = ref([]);
 const searchText = ref("");
 const isEditing = ref(false);
-const imageError = ref(false);
+const fileInput = ref(null); // Ref để reset input file
+
+const selectedFile = ref(null);
+const previewImage = ref(null); // Chỉ dùng để preview ảnh vừa chọn
+const publishers = ref([]); // [Thêm biến lưu danh sách NXB]
 
 const initialForm = {
   title: "", author: "", price: 0, copies: 1, 
   publisher: "", publishedYear: new Date().getFullYear(),
-  image: "" // Thêm trường image
+  image: "" 
 };
 const form = reactive({ ...initialForm });
 
@@ -196,38 +199,83 @@ const filteredBooks = computed(() => {
   );
 });
 
-// Methods
+// Xử lý khi chọn file
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (file) {
+    selectedFile.value = file;
+    // Tạo link blob để xem trước
+    previewImage.value = URL.createObjectURL(file);
+  }
+}
+
 async function loadBooks() {
-  books.value = await BookService.getAll();
+  try {
+    books.value = await BookService.getAll();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function switchToList() {
   viewMode.value = "list";
-  imageError.value = false;
+  // Clear preview
+  if (previewImage.value) URL.revokeObjectURL(previewImage.value);
+  previewImage.value = null;
+  selectedFile.value = null;
 }
 
 function switchToCreate() {
   Object.assign(form, initialForm);
   delete form._id;
+  
+  selectedFile.value = null;
+  previewImage.value = null;
+  if(fileInput.value) fileInput.value.value = ""; // Reset input file HTML
+  
   isEditing.value = false;
   viewMode.value = "form";
-  imageError.value = false;
 }
 
 function editBook(book) {
   Object.assign(form, book);
+  // Nếu book cũ chưa có maNXB (do dữ liệu cũ), có thể nó sẽ hiện ô trống
+  selectedFile.value = null;
+  previewImage.value = null;
+  if(fileInput.value) fileInput.value.value = "";
+  
   isEditing.value = true;
   viewMode.value = "form";
-  imageError.value = false;
 }
 
 async function submitForm() {
   try {
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("author", form.author);
+    
+    // Gửi maNXB
+    if (form.maNXB) {
+        formData.append("maNXB", form.maNXB);
+        // Tìm tên NXB để gửi kèm (cho trường publisher string cũ - tương thích ngược)
+        const selectedNXB = publishers.value.find(p => p._id === form.maNXB);
+        if (selectedNXB) {
+            formData.append("publisherName", selectedNXB.tenNXB);
+        }
+    }
+    
+    formData.append("price", form.price);
+    formData.append("copies", form.copies);
+    formData.append("publishedYear", form.publishedYear);
+    
+    if (selectedFile.value) {
+        formData.append("image", selectedFile.value);
+    }
     if (isEditing.value) {
-      await BookService.update(form._id, form);
+      await BookService.update(form._id, formData);
       showToast("Cập nhật sách thành công", "success");
     } else {
-      await BookService.create(form);
+      await BookService.create(formData);
       showToast("Thêm sách thành công", "success");
     }
     await loadBooks();
@@ -248,27 +296,34 @@ async function deleteBook(id) {
   }
 }
 
-onMounted(loadBooks);
+onMounted(async () => {
+    await Promise.all([loadBooks(), loadPublishers()]);
+});
+async function loadPublishers() {
+    publishers.value = await PublisherService.getAll();
+}
 </script>
 
 <style scoped>
 .label {
-    /* @apply block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide; */
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
 }
-/* Trong trường hợp bạn vẫn muốn dùng @apply ở đây vì nó nằm trong scoped của component này và đã fix css, 
-   tuy nhiên để an toàn tuyệt đối tôi sẽ viết css thường dưới đây */
 .input {
     width: 100%;
-    padding: 0.5rem 0.75rem; /* py-2 px-3 */
-    border: 1px solid #e2e8f0; /* border-slate-200 */
-    border-radius: 0.5rem; /* rounded-lg */
-    font-size: 0.875rem; /* text-sm */
-    transition-property: all;
-    transition-duration: 200ms;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 200ms;
 }
 .input:focus {
     outline: none;
-    border-color: #6366f1; /* indigo-500 */
+    border-color: #6366f1;
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
 }
 </style>

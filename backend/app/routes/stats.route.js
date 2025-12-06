@@ -5,6 +5,6 @@ const ctrl = require("../controllers/stats.controller");
 
 const router = express.Router();
 
-router.get("/", auth(["admin"]), ctrl.overview);
+router.get("/", auth(["admin", "staff"]), ctrl.overview);
 
 module.exports = router;

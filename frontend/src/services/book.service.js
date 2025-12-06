@@ -6,8 +6,12 @@ class BookService {
     async getAll() {
         return (await this.api.get("/")).data;
     }
-    async create(data) {
-        return (await this.api.post("/", data)).data;
+async create(data) {
+        return (await this.api.post("/", data, {
+            headers: {
+                "Content-Type": "multipart/form-data" 
+            }
+        })).data;
     }
     async deleteAll() {
         return (await this.api.delete("/")).data;
@@ -15,8 +19,12 @@ class BookService {
     async get(id) {
         return (await this.api.get(`/${id}`)).data;
     }
-    async update(id, data) {
-        return (await this.api.put(`/${id}`, data)).data;
+async update(id, data) {
+        return (await this.api.put(`/${id}`, data, {
+            headers: {
+                "Content-Type": "multipart/form-data" 
+            }
+        })).data;
     }
     async delete(id) {
         return (await this.api.delete(`/${id}`)).data;
