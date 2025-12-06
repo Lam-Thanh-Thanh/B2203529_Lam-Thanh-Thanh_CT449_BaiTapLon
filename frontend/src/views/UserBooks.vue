@@ -1,69 +1,66 @@
 <template>
-  <div class="space-y-6">
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-      <h2 class="text-2xl font-bold text-slate-800">📚 Thư viện sách</h2>
-      
-      <div class="flex w-full md:w-auto gap-2">
-        <div class="relative flex-1 md:w-80">
-          <span class="absolute left-3 top-2.5 text-slate-400">🔍</span>
-          <input
-            v-model="q"
-            class="pl-10 pr-4 py-2 w-full border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
-            placeholder="Tìm tên sách, tác giả..."
+  <div class="space-y-8">
+    <div class="bg-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200">
+      <div class="max-w-2xl mx-auto text-center space-y-6">
+        <h1 class="text-3xl font-bold">Khám phá tri thức</h1>
+        <p class="text-indigo-100">Hàng ngàn cuốn sách đang chờ bạn.</p>
+        
+        <div class="relative max-w-lg mx-auto">
+          <input 
+            v-model="searchText"
+            type="text"
+            placeholder="Tìm kiếm sách, tác giả..."
+            class="w-full pl-12 pr-4 py-4 rounded-xl text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-400/50 shadow-lg placeholder:text-slate-400"
           />
+          <span class="absolute left-4 top-4 text-xl opacity-50 text-slate-800">🔍</span>
         </div>
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-10 text-slate-500">Đang tải dữ liệu...</div>
-    
-    <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+    <div v-if="loading" class="text-center py-12 text-slate-400">Đang tải sách...</div>
+
+    <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
       <div 
-        v-for="b in filteredBooks" 
-        :key="b._id"
-        class="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-slate-100 overflow-hidden transition-all duration-300 flex flex-col"
+        v-for="book in filteredBooks" 
+        :key="book._id"
+        class="group bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
       >
         <div class="relative aspect-[2/3] overflow-hidden bg-slate-100">
           <img 
-            :src="b.image || 'https://placehold.co/400x600?text=No+Cover'" 
+            :src="book.image || 'https://placehold.co/400x600?text=No+Cover'" 
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            alt="Book cover"
           />
-          <div class="absolute top-2 right-2 px-2 py-1 rounded-md text-xs font-bold shadow-sm"
-            :class="(b.copies > 0) ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'">
-            {{ b.copies > 0 ? `Còn ${b.copies}` : 'Hết hàng' }}
+          <div class="absolute top-2 right-2">
+            <span v-if="book.copies > 0" class="px-2 py-1 bg-emerald-500 text-white text-[10px] font-bold rounded-md shadow-sm">
+              Còn {{ book.copies }}
+            </span>
+            <span v-else class="px-2 py-1 bg-rose-500 text-white text-[10px] font-bold rounded-md shadow-sm">
+              Hết hàng
+            </span>
           </div>
         </div>
 
         <div class="p-4 flex flex-col flex-1">
-          <h3 class="font-bold text-slate-800 line-clamp-2 min-h-[3rem] mb-1" :title="b.title">
-            {{ b.title }}
+          <h3 class="font-bold text-slate-800 line-clamp-2 mb-1 min-h-[3rem]" :title="book.title">
+            {{ book.title }}
           </h3>
-          <p class="text-sm text-slate-500 mb-2">{{ b.author }}</p>
-          
-          <div class="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between">
-            <span class="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded">
-              {{ b.publishedYear || 'N/A' }}
-            </span>
-            
-            <button
-              @click="borrow(b)"
-              :disabled="!canBorrow(b)"
-              class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
-              :class="canBorrow(b) 
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200 shadow-md' 
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'"
+          <p class="text-xs text-slate-500 mb-4">{{ book.author }}</p>
+
+          <div class="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400">{{ book.publishedYear || 'N/A' }}</span>
+            <button 
+              @click="handleBorrow(book)"
+              :disabled="book.copies <= 0"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-sm"
+              :class="book.copies > 0 
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200' 
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
             >
-              <span>Mượn sách</span>
+              {{ book.copies > 0 ? 'Mượn sách' : 'Tạm hết' }}
             </button>
           </div>
         </div>
       </div>
-    </div>
-    
-    <div v-if="!loading && filteredBooks.length === 0" class="text-center py-20">
-      <div class="text-4xl mb-2">cS</div>
-      <p class="text-slate-500">Không tìm thấy cuốn sách nào.</p>
     </div>
   </div>
 </template>
@@ -76,11 +73,31 @@ import { auth } from "@/stores/auth";
 import { showToast } from "@/stores/toast";
 
 const books = ref([]);
-const q = ref("");
+const searchText = ref("");
 const loading = ref(true);
 
-function canBorrow(b) {
-  return auth.readerId() && (b.copies ?? 0) > 0;
+const filteredBooks = computed(() => {
+  if (!searchText.value) return books.value;
+  const k = searchText.value.toLowerCase();
+  return books.value.filter(b => 
+    b.title.toLowerCase().includes(k) || 
+    b.author.toLowerCase().includes(k)
+  );
+});
+
+async function handleBorrow(book) {
+  if (!auth.user) {
+    showToast("Vui lòng đăng nhập để mượn sách", "error");
+    return;
+  }
+  if (!confirm(`Bạn muốn mượn sách "${book.title}"?`)) return;
+
+  try {
+    await BorrowService.create({ maSach: book._id, maDocGia: auth.readerId() });
+    showToast("Đã gửi yêu cầu mượn thành công!", "success");
+  } catch (e) {
+    showToast(e.response?.data?.message || "Lỗi khi mượn sách", "error");
+  }
 }
 
 onMounted(async () => {
@@ -90,26 +107,4 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-const filteredBooks = computed(() => {
-  if (!q.value) return books.value;
-  const key = q.value.toLowerCase();
-  return books.value.filter((b) => 
-    b.title?.toLowerCase().includes(key) || 
-    b.author?.toLowerCase().includes(key)
-  );
-});
-
-async function borrow(b) {
-  if (!auth.readerId()) {
-    showToast("Vui lòng đăng nhập để mượn sách.", "error");
-    return;
-  }
-  try {
-    await BorrowService.create({ maSach: b._id });
-    showToast(`Đã gửi yêu cầu mượn: ${b.title}`, "success");
-  } catch (e) {
-    showToast(e.response?.data?.message || "Lỗi mượn sách", "error");
-  }
-}
 </script>
