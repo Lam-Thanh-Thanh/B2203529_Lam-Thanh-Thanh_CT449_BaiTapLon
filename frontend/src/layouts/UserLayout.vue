@@ -13,7 +13,7 @@
             <router-link to="/books" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
               Thư viện sách
             </router-link>
-            <router-link to="/borrow-history" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
+            <router-link to="/history" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
               Lịch sử mượn
             </router-link>
             <router-link to="/profile" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">

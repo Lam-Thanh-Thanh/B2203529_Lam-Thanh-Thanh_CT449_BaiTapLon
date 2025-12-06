@@ -135,9 +135,15 @@ class BorrowService {
       },
       { returnDocument: "after" }
     );
-    if (!result) throw new Error("Borrow not found or not in 'pending'");
+
+    if (!result) {
+      throw new Error("Borrow not found or not in 'pending'");
+    }
+
     return result;
   }
+
+
   // Cập nhật người giao sách (msnv) nếu chưa có
   async markBorrowed(id, staffId) {
     const borrow = await this.findById(id);
@@ -187,7 +193,7 @@ class BorrowService {
       { $set: updateData },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 
   // xác nhận đã trả -> returned (cộng copies)
@@ -215,7 +221,7 @@ class BorrowService {
       },
       { returnDocument: "after" }
     );
-    return result.value;
+    return result;
   }
 }
 

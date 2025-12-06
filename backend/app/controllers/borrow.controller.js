@@ -21,23 +21,38 @@ exports.create = async (req, res, next) => {
   }
 };
 
+// app/controllers/borrow.controller.js
 exports.findAll = async (req, res, next) => {
   try {
-    const { status } = req.query;
+    const { status, maDocGia: maDocGiaQuery } = req.query;
 
-    // Chỉ lấy lịch sử của user đang đăng nhập
-    const maDocGia = req.user?.readerId;
+    const filter = { status };
 
-    if (!maDocGia) {
-      return res.status(400).json({ message: "User has no reader profile" });
+    // Nếu là user thường -> chỉ cho xem lịch sử của chính mình
+    if (req.user.role === "user") {
+      const maDocGia = req.user.readerId;
+      // Không có hồ sơ độc giả thì coi như không có lịch sử => trả mảng rỗng
+      if (!maDocGia) {
+        return res.json([]);
+      }
+      filter.maDocGia = maDocGia;
     }
 
-    const data = await svc().findAll({ status, maDocGia });
+    // Nếu là admin -> cho phép xem tất cả,
+    // hoặc lọc theo maDocGia nếu phía client gửi lên
+    if (req.user.role === "admin") {
+      if (maDocGiaQuery) {
+        filter.maDocGia = maDocGiaQuery;
+      }
+    }
+
+    const data = await svc().findAll(filter);
     res.json(data);
   } catch (e) {
     next(e);
   }
 };
+
 
 exports.findOne = async (req, res, next) => {
   try {
