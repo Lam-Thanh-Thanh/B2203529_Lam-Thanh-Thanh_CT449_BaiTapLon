@@ -14,8 +14,9 @@ class BookService {
       copies: typeof payload.copies === "number" ? payload.copies : undefined, // Số quyển
       publisher: payload.publisher,
       publishedYear:
-        typeof payload.publishedYear === "number" ? payload.publishedYear : undefined,
+      typeof payload.publishedYear === "number" ? payload.publishedYear : undefined,
       tags: Array.isArray(payload.tags) ? payload.tags : undefined,
+      image: payload.image,
       // có thể thêm fields khác từ lược đồ sau này
     };
 

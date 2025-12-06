@@ -1,116 +1,105 @@
 <template>
-  <section>
-    <h2 class="text-xl font-semibold mb-4">Thông tin cá nhân</h2>
+  <div class="max-w-5xl mx-auto space-y-6 animate-fade-in">
+    <h2 class="text-2xl font-bold text-slate-800">Hồ sơ cá nhân</h2>
 
-    <div v-if="loading" class="text-sm text-slate-500">Đang tải...</div>
+    <div v-if="loading" class="text-center py-8 text-slate-500">Đang tải thông tin...</div>
 
-    <div v-else class="grid gap-4 md:grid-cols-2">
-      <!-- Thông tin Reader -->
-      <div class="bg-white border rounded-xl p-4 shadow-sm space-y-3">
-        <h3 class="font-semibold mb-2">Thông tin độc giả</h3>
+    <div v-else class="grid md:grid-cols-3 gap-6">
+      
+      <div class="md:col-span-1 space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 text-center">
+          <div class="w-24 h-24 mx-auto bg-indigo-100 rounded-full flex items-center justify-center text-3xl mb-4 text-indigo-600 border-4 border-white shadow-md">
+            {{ (reader.ten || 'U').charAt(0).toUpperCase() }}
+          </div>
+          <h3 class="text-xl font-bold text-slate-800">
+            {{ reader.hoLot }} {{ reader.ten }}
+          </h3>
+          <p class="text-sm text-slate-500 uppercase tracking-wider mt-1">{{ profile.user?.role }}</p>
+          
+          <div class="mt-6 space-y-3 text-left text-sm">
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span class="text-slate-500">Username</span>
+              <span class="font-medium text-slate-700">{{ profile.user?.username }}</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span class="text-slate-500">Giới tính</span>
+              <span class="font-medium text-slate-700">{{ reader.phai || '---' }}</span>
+            </div>
+            <div class="flex justify-between border-b border-slate-50 pb-2">
+              <span class="text-slate-500">SĐT</span>
+              <span class="font-medium text-slate-700">{{ reader.dienThoai || '---' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div class="text-xs text-slate-500 mb-2">
-          Tài khoản:
-          <b>{{ profile.user?.username }}</b> ({{ profile.user?.role }})
+      <div class="md:col-span-2 space-y-6">
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-slate-800">Cập nhật thông tin</h3>
+            <span class="text-xl">📝</span>
+          </div>
+          
+          <form @submit.prevent="saveProfile" class="grid gap-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Họ lót</label>
+                <input v-model="reader.hoLot" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Tên</label>
+                <input v-model="reader.ten" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-500 mb-1">Địa chỉ</label>
+              <input v-model="reader.diaChi" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Số điện thoại</label>
+                <input v-model="reader.dienThoai" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-slate-500 mb-1">Giới tính</label>
+                <select v-model="reader.phai" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm transition bg-white">
+                  <option value="Nam">Nam</option>
+                  <option value="Nữ">Nữ</option>
+                  <option value="Khác">Khác</option>
+                </select>
+              </div>
+            </div>
+            <div class="text-right mt-2">
+              <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition shadow-sm hover:shadow-md">
+                Lưu thay đổi
+              </button>
+            </div>
+          </form>
         </div>
 
-        <form @submit.prevent="saveProfile" class="space-y-3">
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-sm mb-1">Họ lót</label>
-              <input
-                v-model="reader.hoLot"
-                class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label class="block text-sm mb-1">Tên</label>
-              <input
-                v-model="reader.ten"
-                class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+           <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-slate-800">Đổi mật khẩu</h3>
+            <span class="text-xl">🔒</span>
           </div>
+          <form @submit.prevent="changePwd" class="space-y-3">
+             <div class="grid md:grid-cols-3 gap-4">
+               <input v-model="oldPassword" type="password" placeholder="Mật khẩu hiện tại" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition" required />
+               <input v-model="newPassword" type="password" placeholder="Mật khẩu mới" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition" required />
+               <input v-model="confirmPassword" type="password" placeholder="Nhập lại mới" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm transition" required />
+             </div>
+             <div class="text-right">
+                <button class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold hover:bg-emerald-700 transition shadow-sm hover:shadow-md">
+                  Cập nhật mật khẩu
+                </button>
+             </div>
+          </form>
+        </div>
 
-          <div>
-            <label class="block text-sm mb-1">Giới tính</label>
-            <input
-              v-model="reader.phai"
-              class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              placeholder="Nam/Nữ/Khác..."
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm mb-1">Địa chỉ</label>
-            <input
-              v-model="reader.diaChi"
-              class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm mb-1">Điện thoại</label>
-            <input
-              v-model="reader.dienThoai"
-              class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <button
-            class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
-            type="submit"
-          >
-            Lưu thay đổi
-          </button>
-        </form>
-      </div>
-
-      <!-- Đổi mật khẩu -->
-      <div class="bg-white border rounded-xl p-4 shadow-sm space-y-3">
-        <h3 class="font-semibold mb-2">Đổi mật khẩu</h3>
-
-        <form @submit.prevent="changePwd" class="space-y-3">
-          <div>
-            <label class="block text-sm mb-1">Mật khẩu hiện tại</label>
-            <input
-              v-model="oldPassword"
-              type="password"
-              class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Mật khẩu mới</label>
-            <input
-              v-model="newPassword"
-              type="password"
-              class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Nhập lại mật khẩu mới</label>
-            <input
-              v-model="confirmPassword"
-              type="password"
-              class="border rounded-lg p-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
-
-          <button
-            class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition"
-            type="submit"
-          >
-            Đổi mật khẩu
-          </button>
-        </form>
-
-        <p v-if="pwdError" class="text-xs text-rose-600 mt-1">{{ pwdError }}</p>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup>
@@ -119,70 +108,34 @@ import MeService from "@/services/me.service";
 import { showToast } from "@/stores/toast";
 
 const loading = ref(true);
-const profile = reactive({ user: null, reader: null });
-const reader = reactive({
-  hoLot: "",
-  ten: "",
-  phai: "",
-  diaChi: "",
-  dienThoai: "",
-});
-
+const profile = reactive({ user: null, reader: {} });
+const reader = reactive({});
 const oldPassword = ref("");
 const newPassword = ref("");
 const confirmPassword = ref("");
-const pwdError = ref("");
 
 onMounted(async () => {
   try {
     const data = await MeService.getProfile();
     profile.user = data.user;
-    profile.reader = data.reader || {};
-    reader.hoLot = data.reader?.hoLot || "";
-    reader.ten = data.reader?.ten || "";
-    reader.phai = data.reader?.phai || "";
-    reader.diaChi = data.reader?.diaChi || "";
-    reader.dienThoai = data.reader?.dienThoai || "";
-  } catch (e) {
-    showToast("Không tải được thông tin cá nhân", "error");
-  } finally {
-    loading.value = false;
-  }
+    Object.assign(reader, data.reader || {});
+  } catch(e) { showToast("Lỗi tải thông tin", "error"); } 
+  finally { loading.value = false; }
 });
 
 async function saveProfile() {
   try {
-    const updated = await MeService.updateProfile(reader);
-    reader.hoLot = updated.hoLot || "";
-    reader.ten = updated.ten || "";
-    reader.phai = updated.phai || "";
-    reader.diaChi = updated.diaChi || "";
-    reader.dienThoai = updated.dienThoai || "";
-    showToast("Đã lưu thông tin độc giả", "success");
-  } catch (e) {
-    showToast("Lưu thông tin thất bại", "error");
-  }
+    await MeService.updateProfile(reader);
+    showToast("Cập nhật thành công", "success");
+  } catch { showToast("Lỗi cập nhật", "error"); }
 }
 
 async function changePwd() {
-  pwdError.value = "";
-  if (newPassword.value !== confirmPassword.value) {
-    pwdError.value = "Mật khẩu nhập lại không khớp";
-    return;
-  }
+  if(newPassword.value !== confirmPassword.value) return showToast("Mật khẩu không khớp", "error");
   try {
-    await MeService.changePassword({
-      oldPassword: oldPassword.value,
-      newPassword: newPassword.value,
-    });
+    await MeService.changePassword({ oldPassword: oldPassword.value, newPassword: newPassword.value });
     showToast("Đổi mật khẩu thành công", "success");
-    oldPassword.value = "";
-    newPassword.value = "";
-    confirmPassword.value = "";
-  } catch (e) {
-    const msg = e?.response?.data?.message || "Đổi mật khẩu thất bại";
-    pwdError.value = msg;
-    showToast(msg, "error");
-  }
+    oldPassword.value = ""; newPassword.value = ""; confirmPassword.value = "";
+  } catch(e) { showToast(e.response?.data?.message || "Lỗi", "error"); }
 }
 </script>

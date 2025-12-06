@@ -3,104 +3,49 @@
     <h2 class="text-xl font-semibold mb-3">Quản lý phiếu mượn</h2>
 
     <div class="bg-white border rounded-xl p-4 shadow-sm">
-      <!-- Filter + page size -->
-      <div
-        class="flex flex-col gap-2 mb-3 md:flex-row md:items-center md:justify-between"
-      >
+      <div class="flex flex-col gap-2 mb-3 md:flex-row md:items-center md:justify-between">
         <div class="flex gap-2 items-center">
           <span class="text-sm text-slate-600">Trạng thái:</span>
-          <select
-            class="border rounded-lg p-2 text-sm"
-            v-model="status"
-            @change="reload"
-          >
+          <select class="border rounded-lg p-2 text-sm" v-model="status" @change="reload">
             <option value="">Tất cả</option>
             <option value="pending">Chờ duyệt</option>
             <option value="approved">Đã duyệt</option>
             <option value="borrowed">Đang mượn</option>
             <option value="returned">Đã trả</option>
           </select>
-          <button
-            class="px-3 py-2 text-xs rounded-lg border hover:bg-slate-50"
-            @click="reload"
-          >
+          <button class="px-3 py-2 text-xs rounded-lg border hover:bg-slate-50" @click="reload">
             Làm mới
           </button>
         </div>
-
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-slate-500">Hiển thị</span>
-          <select
-            v-model.number="pageSize"
-            class="border rounded-lg p-1.5 text-xs"
-          >
-            <option :value="5">5 / trang</option>
-            <option :value="10">10 / trang</option>
-            <option :value="20">20 / trang</option>
-          </select>
-        </div>
       </div>
 
-      <!-- Table -->
       <div class="overflow-x-auto">
         <table class="w-full border text-sm">
           <thead>
             <tr class="bg-slate-50">
-              <th class="border p-2">Reader</th>
-              <th class="border p-2">Sách</th>
-              <th
-                class="border p-2 cursor-pointer text-center"
-                @click="setSort('status')"
-              >
-                Trạng thái
-                <span
-                  v-if="sortKey === 'status'"
-                  class="inline-block ml-1 text-[10px]"
-                >
-                  {{ sortDir === "asc" ? "▲" : "▼" }}
-                </span>
-              </th>
-              <th
-                class="border p-2 cursor-pointer text-center"
-                @click="setSort('ngayMuon')"
-              >
-                Ngày mượn
-                <span
-                  v-if="sortKey === 'ngayMuon'"
-                  class="inline-block ml-1 text-[10px]"
-                >
-                  {{ sortDir === "asc" ? "▲" : "▼" }}
-                </span>
-              </th>
-              <th
-                class="border p-2 cursor-pointer text-center"
-                @click="setSort('ngayTra')"
-              >
-                Ngày trả
-                <span
-                  v-if="sortKey === 'ngayTra'"
-                  class="inline-block ml-1 text-[10px]"
-                >
-                  {{ sortDir === "asc" ? "▲" : "▼" }}
-                </span>
-              </th>
+              <th class="border p-2 text-left">Độc giả</th>
+              <th class="border p-2 text-left">Sách</th>
+              <th class="border p-2 text-center">NV Xử lý</th> <th class="border p-2 text-center" @click="setSort('status')">Trạng thái</th>
+              <th class="border p-2 text-center" @click="setSort('ngayMuon')">Ngày mượn</th>
               <th class="border p-2 text-center">Hạn trả</th>
               <th class="border p-2 text-center">Hành động</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="r in paginatedRows" :key="r._id">
-              <td class="border p-2 text-xs">
-                <div class="font-mono">{{ r.maDocGia }}</div>
+              <td class="border p-2">
+                <div class="font-semibold">{{ r.readerName || 'Không rõ' }}</div>
+                <div class="text-[10px] text-slate-400 font-mono">{{ r.maDocGia }}</div>
               </td>
               <td class="border p-2">
-                {{ bookName(r.maSach) }}
+                {{ r.bookTitle || 'Sách đã xóa' }}
               </td>
+              <td class="border p-2 text-center text-indigo-600 font-medium">
+                {{ r.staffName || '-' }}
+              </td>
+
               <td class="border p-2 text-center">
-                <span
-                  class="px-2 py-0.5 rounded-full text-xs font-medium"
-                  :class="statusClass(r.status)"
-                >
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(r.status)">
                   {{ r.status }}
                 </span>
               </td>
@@ -108,44 +53,23 @@
                 {{ fmt(r.ngayMuon) }}
               </td>
               <td class="border p-2 text-center text-xs">
-                {{ fmt(r.ngayTra) }}
-              </td>
-              <td class="border p-2 text-center text-xs">
                 {{ fmt(r.dueDate) }}
-                <div
-                  v-if="isOverdue(r)"
-                  class="text-[11px] text-rose-600 mt-1"
-                >
-                  Quá hạn!
-                </div>
+                <div v-if="isOverdue(r)" class="text-[11px] text-rose-600 mt-1">Quá hạn!</div>
               </td>
               <td class="border p-2 text-center">
                 <div class="flex flex-wrap gap-1 justify-center text-xs">
-                  <button
-                    v-if="r.status === 'pending'"
-                    class="px-2 py-1 border rounded hover:bg-slate-50"
-                    @click="approve(r)"
-                  >
+                  <button v-if="r.status === 'pending'" class="px-2 py-1 border rounded hover:bg-green-50 text-green-700" @click="approve(r)">
                     Duyệt
                   </button>
-                  <button
-                    v-if="r.status === 'pending' || r.status === 'approved'"
-                    class="px-2 py-1 border rounded hover:bg-slate-50"
-                    @click="borrowed(r)"
-                  >
+                  <button v-if="['pending', 'approved'].includes(r.status)" class="px-2 py-1 border rounded hover:bg-blue-50 text-blue-700" @click="borrowed(r)">
                     Đã mượn
                   </button>
-                  <button
-                    v-if="r.status === 'borrowed'"
-                    class="px-2 py-1 border rounded hover:bg-slate-50"
-                    @click="returned(r)"
-                  >
+                  <button v-if="r.status === 'borrowed'" class="px-2 py-1 border rounded hover:bg-slate-50" @click="returned(r)">
                     Đã trả
                   </button>
                 </div>
               </td>
             </tr>
-
             <tr v-if="!paginatedRows.length">
               <td colspan="7" class="border p-2 text-center text-slate-500">
                 Không có phiếu mượn.
@@ -154,35 +78,8 @@
           </tbody>
         </table>
       </div>
-
-      <!-- Pagination -->
-      <div
-        v-if="totalPages > 1"
-        class="flex items-center justify-between mt-3 text-xs"
-      >
-        <div>
-          Trang {{ currentPage }} / {{ totalPages }}
-          <span class="text-slate-500">
-            ({{ rows.length }} phiếu)
-          </span>
-        </div>
-        <div class="flex gap-1">
-          <button
-            class="px-2 py-1 border rounded disabled:opacity-40"
-            :disabled="currentPage === 1"
-            @click="currentPage--"
-          >
-            ‹
-          </button>
-          <button
-            class="px-2 py-1 border rounded disabled:opacity-40"
-            :disabled="currentPage === totalPages"
-            @click="currentPage++"
-          >
-            ›
-          </button>
-        </div>
-      </div>
+       <div v-if="totalPages > 1" class="flex items-center justify-between mt-3 text-xs">
+          </div>
     </div>
   </section>
 </template>
@@ -190,28 +87,21 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import BorrowService from "@/services/borrow.service";
-import BookService from "@/services/book.service";
 import { showToast } from "@/stores/toast";
 
 const status = ref("");
 const rows = ref([]);
-const books = ref([]);
 
-const sortKey = ref("ngayMuon");
+// Không cần load BookService nữa vì API đã trả về tên sách
+const sortKey = ref("createdAt"); // Mặc định sort theo thời gian tạo mới nhất
 const sortDir = ref("desc");
 const currentPage = ref(1);
-const pageSize = ref(5);
+const pageSize = ref(10); // Tăng default size lên cho dễ nhìn
 
-const bookMap = computed(() =>
-  Object.fromEntries(books.value.map((b) => [b._id, b]))
-);
-
-function bookName(id) {
-  return bookMap.value[id]?.title || id;
-}
 function fmt(d) {
-  return d ? new Date(d).toLocaleString() : "";
+  return d ? new Date(d).toLocaleString('vi-VN') : "";
 }
+
 function isOverdue(r) {
   return (
     r.status === "borrowed" &&
@@ -219,23 +109,15 @@ function isOverdue(r) {
     new Date(r.dueDate).getTime() < Date.now()
   );
 }
+
 function statusClass(s) {
   switch (s) {
-    case "pending":
-      return "bg-slate-100 text-slate-700";
-    case "approved":
-      return "bg-amber-100 text-amber-800";
-    case "borrowed":
-      return "bg-blue-100 text-blue-800";
-    case "returned":
-      return "bg-emerald-100 text-emerald-800";
-    default:
-      return "bg-slate-100 text-slate-700";
+    case "pending": return "bg-gray-100 text-gray-700";
+    case "approved": return "bg-yellow-100 text-yellow-800";
+    case "borrowed": return "bg-blue-100 text-blue-800";
+    case "returned": return "bg-green-100 text-green-800";
+    default: return "bg-gray-100 text-gray-700";
   }
-}
-
-async function loadBase() {
-  books.value = await BookService.getAll();
 }
 
 async function reload() {
@@ -246,19 +128,20 @@ async function reload() {
 }
 
 onMounted(async () => {
-  await loadBase();
   await reload();
 });
 
-// SORT + PAGINATION
+// Logic Sort & Pagination giữ nguyên nhưng tối ưu sortKey
 const sortedRows = computed(() => {
   const arr = [...rows.value];
   arr.sort((a, b) => {
     let va = a[sortKey.value];
     let vb = b[sortKey.value];
-    if (sortKey.value === "ngayMuon" || sortKey.value === "ngayTra") {
-      va = va ? new Date(va).getTime() : 0;
-      vb = vb ? new Date(vb).getTime() : 0;
+    
+    // Xử lý ngày tháng
+    if (['ngayMuon', 'createdAt', 'dueDate', 'ngayTra'].includes(sortKey.value)) {
+        va = va ? new Date(va).getTime() : 0;
+        vb = vb ? new Date(vb).getTime() : 0;
     }
 
     if (va == null && vb == null) return 0;
@@ -297,44 +180,32 @@ function setSort(key) {
   }
 }
 
-// ACTIONS (fix: luôn reload, show toast nếu lỗi)
+// Actions
 async function approve(r) {
   try {
     await BorrowService.approve(r._id);
     showToast("Đã duyệt phiếu mượn", "success");
-  } catch (e) {
-    showToast(
-      e?.response?.data?.message || "Không duyệt được phiếu mượn",
-      "error"
-    );
-  } finally {
     await reload();
+  } catch (e) {
+    showToast("Lỗi duyệt: " + e.message, "error");
   }
 }
 async function borrowed(r) {
   try {
     await BorrowService.markBorrowed(r._id);
-    showToast("Đã ghi nhận 'đã mượn'", "success");
-  } catch (e) {
-    showToast(
-      e?.response?.data?.message || "Không thể chuyển sang 'đã mượn'",
-      "error"
-    );
-  } finally {
+    showToast("Đã xác nhận mượn", "success");
     await reload();
+  } catch (e) {
+    showToast("Lỗi xác nhận: " + e.message, "error");
   }
 }
 async function returned(r) {
   try {
     await BorrowService.markReturned(r._id);
     showToast("Đã trả sách", "success");
-  } catch (e) {
-    showToast(
-      e?.response?.data?.message || "Không thể ghi nhận 'đã trả'",
-      "error"
-    );
-  } finally {
     await reload();
+  } catch (e) {
+    showToast("Lỗi trả sách: " + e.message, "error");
   }
 }
 </script>

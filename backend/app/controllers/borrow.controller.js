@@ -39,21 +39,27 @@ exports.findOne = async (req, res, next) => {
 
 exports.approve = async (req, res, next) => {
   try {
-    const data = await svc().approve(req.params.id, { msnv: req.body.msnv });
+    // Lấy ID của admin đang đăng nhập làm msnv
+    const staffId = req.user.id; 
+    const data = await svc().approve(req.params.id, { msnv: staffId });
     res.json(data);
   } catch (e) { next(e); }
 };
 
 exports.markBorrowed = async (req, res, next) => {
   try {
-    const data = await svc().markBorrowed(req.params.id);
+    // Khi đánh dấu đã mượn, cũng cập nhật người xử lý (người giao sách)
+    const staffId = req.user.id;
+    const data = await svc().markBorrowed(req.params.id, staffId);
     res.json(data);
   } catch (e) { next(e); }
 };
 
 exports.markReturned = async (req, res, next) => {
   try {
-    const data = await svc().markReturned(req.params.id);
+    // Khi trả sách, cũng có thể lưu người nhận sách (nếu muốn mở rộng sau này)
+    const staffId = req.user.id;
+    const data = await svc().markReturned(req.params.id, staffId);
     res.json(data);
   } catch (e) { next(e); }
 };

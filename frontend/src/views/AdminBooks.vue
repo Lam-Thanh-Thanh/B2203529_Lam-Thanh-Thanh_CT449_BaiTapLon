@@ -1,365 +1,274 @@
 <template>
   <section>
-    <h2 class="text-xl font-semibold mb-3">Quản lý Sách</h2>
-
-    <div class="grid md:grid-cols-2 gap-4">
-      <!-- FORM -->
-      <form
-        @submit.prevent="submit"
-        class="bg-white border rounded-xl p-4 space-y-3 shadow-sm"
-      >
-        <h3 class="font-semibold">
-          {{ form._id ? "Sửa sách" : "Thêm sách mới" }}
-        </h3>
-
-        <div>
-          <label class="block text-sm mb-1">Tiêu đề</label>
-          <input
-            class="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            v-model="form.title"
-            required
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm mb-1">Tác giả</label>
-          <input
-            class="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            v-model="form.author"
-          />
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block text-sm mb-1">Số quyển (copies)</label>
-            <input
-              type="number"
-              min="0"
-              class="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              v-model.number="form.copies"
-            />
-          </div>
-          <div>
-            <label class="block text-sm mb-1">Năm XB</label>
-            <input
-              type="number"
-              class="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              v-model.number="form.publishedYear"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-sm mb-1">Nhà xuất bản</label>
-          <input
-            class="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            v-model="form.publisher"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm mb-1">Tags (cách nhau bởi dấu phẩy)</label>
-          <input
-            class="border rounded-lg p-2 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-            v-model="tags"
-          />
-        </div>
-
-        <div class="flex gap-2">
-          <button
-            class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
-            type="submit"
-          >
-            {{ form._id ? "Cập nhật" : "Thêm" }}
-          </button>
-          <button
-            v-if="form._id"
-            type="button"
-            class="px-3 py-2 rounded-lg border text-sm hover:bg-slate-50"
-            @click="reset"
-          >
-            Hủy
-          </button>
-        </div>
-      </form>
-
-      <!-- LIST + PAGINATION + SORT -->
-      <div class="bg-white border rounded-xl p-4 shadow-sm">
-        <div class="flex flex-col gap-2 mb-3 md:flex-row md:items-center">
-          <input
-            class="border rounded-lg p-2 flex-1 min-w-[220px] focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Tìm theo tiêu đề, tác giả, NXB, tags..."
-            v-model="q"
-            @keyup.enter="currentPage = 1"
-          />
-          <select
-            v-model.number="pageSize"
-            class="border rounded-lg p-2 text-sm w-32"
-          >
-            <option :value="5">5 / trang</option>
-            <option :value="10">10 / trang</option>
-            <option :value="20">20 / trang</option>
-          </select>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full border text-sm">
-            <thead>
-              <tr class="bg-slate-50">
-                <th
-                  class="border p-2 text-left cursor-pointer"
-                  @click="setSort('title')"
-                >
-                  Tiêu đề
-                  <span
-                    v-if="sortKey === 'title'"
-                    class="inline-block ml-1 text-[10px]"
-                  >
-                    {{ sortDir === "asc" ? "▲" : "▼" }}
-                  </span>
-                </th>
-                <th
-                  class="border p-2 text-left cursor-pointer"
-                  @click="setSort('author')"
-                >
-                  Tác giả
-                  <span
-                    v-if="sortKey === 'author'"
-                    class="inline-block ml-1 text-[10px]"
-                  >
-                    {{ sortDir === "asc" ? "▲" : "▼" }}
-                  </span>
-                </th>
-                <th
-                  class="border p-2 text-center cursor-pointer w-20"
-                  @click="setSort('copies')"
-                >
-                  Còn
-                  <span
-                    v-if="sortKey === 'copies'"
-                    class="inline-block ml-1 text-[10px]"
-                  >
-                    {{ sortDir === "asc" ? "▲" : "▼" }}
-                  </span>
-                </th>
-                <th
-                  class="border p-2 text-center cursor-pointer w-24"
-                  @click="setSort('publishedYear')"
-                >
-                  Năm XB
-                  <span
-                    v-if="sortKey === 'publishedYear'"
-                    class="inline-block ml-1 text-[10px]"
-                  >
-                    {{ sortDir === "asc" ? "▲" : "▼" }}
-                  </span>
-                </th>
-                <th class="border p-2 text-center w-32">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="b in paginatedBooks" :key="b._id">
-                <td class="border p-2 align-top">
-                  <div class="font-semibold">{{ b.title }}</div>
-                  <div class="text-xs text-slate-500" v-if="b.publisher">
-                    NXB: {{ b.publisher }}
-                  </div>
-                  <div class="text-[11px] text-slate-400" v-if="b.tags?.length">
-                    Tags: {{ b.tags.join(", ") }}
-                  </div>
-                </td>
-                <td class="border p-2 align-top">
-                  {{ b.author || "-" }}
-                </td>
-                <td class="border p-2 text-center align-top">
-                  {{ b.copies ?? 0 }}
-                </td>
-                <td class="border p-2 text-center align-top">
-                  {{ b.publishedYear || "-" }}
-                </td>
-                <td class="border p-2 text-center align-top">
-                  <button
-                    class="px-2 py-1 rounded border text-xs mr-1 hover:bg-slate-50"
-                    @click="edit(b)"
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    class="px-2 py-1 rounded border text-xs text-rose-600 hover:bg-rose-50"
-                    @click="remove(b)"
-                  >
-                    Xóa
-                  </button>
-                </td>
-              </tr>
-              <tr v-if="!paginatedBooks.length">
-                <td colspan="5" class="border p-2 text-center text-slate-500">
-                  Không có sách phù hợp.
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- PAGINATION -->
-        <div
-          v-if="totalPages > 1"
-          class="flex items-center justify-between mt-3 text-xs"
-        >
-          <div>
-            Trang {{ currentPage }} / {{ totalPages }}
-            <span class="text-slate-500">
-              ({{ filteredBooks.length }} sách)
-            </span>
-          </div>
-          <div class="flex gap-1">
-            <button
-              class="px-2 py-1 border rounded disabled:opacity-40"
-              :disabled="currentPage === 1"
-              @click="currentPage--"
-            >
-              ‹
-            </button>
-            <button
-              class="px-2 py-1 border rounded disabled:opacity-40"
-              :disabled="currentPage === totalPages"
-              @click="currentPage++"
-            >
-              ›
-            </button>
-          </div>
-        </div>
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Quản lý Sách</h2>
+        <p class="text-slate-500 text-sm" v-if="viewMode === 'list'">Danh sách tất cả sách trong hệ thống</p>
+        <p class="text-slate-500 text-sm" v-else>{{ isEditing ? 'Chỉnh sửa thông tin sách' : 'Thêm sách mới vào kho' }}</p>
       </div>
+
+      <button 
+        v-if="viewMode === 'list'"
+        @click="switchToCreate"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm transition"
+      >
+        <span>+</span> Thêm sách mới
+      </button>
+
+      <button 
+        v-else
+        @click="switchToList"
+        class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition"
+      >
+        &larr; Quay lại danh sách
+      </button>
+    </div>
+
+    <div v-if="viewMode === 'list'" class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden animate-fade-in">
+      <div class="p-4 border-b border-slate-100 flex gap-4">
+        <input 
+          v-model="searchText" 
+          placeholder="Tìm kiếm theo tên sách..." 
+          class="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+        />
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
+            <tr>
+              <th class="p-4">Thông tin sách</th>
+              <th class="p-4 text-center">Số lượng</th>
+              <th class="p-4">Năm XB</th>
+              <th class="p-4 text-right">Giá tiền</th>
+              <th class="p-4 text-center">Hành động</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr v-for="book in filteredBooks" :key="book._id" class="hover:bg-slate-50 transition">
+              <td class="p-4">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-14 bg-slate-200 rounded overflow-hidden flex-shrink-0 border border-slate-200">
+                     <img 
+                        :src="book.image || 'https://placehold.co/40x60?text=No+Img'" 
+                        class="w-full h-full object-cover" 
+                        alt="cover"
+                     />
+                  </div>
+                  <div>
+                    <div class="font-bold text-slate-800 line-clamp-1 text-base">{{ book.title }}</div>
+                    <div class="text-slate-500 text-xs">{{ book.author }}</div>
+                    <div class="text-indigo-600 text-[10px] mt-0.5 bg-indigo-50 px-1.5 py-0.5 rounded inline-block">
+                        {{ book.publisher }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td class="p-4 text-center font-medium" :class="book.copies > 0 ? 'text-emerald-600' : 'text-rose-500'">
+                {{ book.copies }}
+              </td>
+              <td class="p-4 text-slate-600">{{ book.publishedYear }}</td>
+              <td class="p-4 text-right font-mono text-slate-700">{{ book.price?.toLocaleString() }} đ</td>
+              <td class="p-4 text-center">
+                <div class="flex justify-center gap-2">
+                  <button @click="editBook(book)" class="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition" title="Sửa">
+                    ✏️
+                  </button>
+                  <button @click="deleteBook(book._id)" class="p-1.5 text-rose-600 hover:bg-rose-50 rounded transition" title="Xóa">
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="!filteredBooks.length">
+                <td colspan="5" class="p-8 text-center text-slate-400">Không tìm thấy sách nào.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in">
+        
+        <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm p-6">
+            <h3 class="font-bold text-lg text-slate-800 mb-4 border-b border-slate-100 pb-2">
+                Thông tin chi tiết
+            </h3>
+            <form @submit.prevent="submitForm" class="space-y-4">
+                <div>
+                    <label class="label">Tên sách <span class="text-rose-500">*</span></label>
+                    <input v-model="form.title" class="input" required placeholder="Nhập tên sách..." />
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                     <div>
+                        <label class="label">Tác giả <span class="text-rose-500">*</span></label>
+                        <input v-model="form.author" class="input" required />
+                    </div>
+                     <div>
+                        <label class="label">Nhà xuất bản</label>
+                        <input v-model="form.publisher" class="input" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="label">Giá (VNĐ)</label>
+                        <input v-model.number="form.price" type="number" class="input" />
+                    </div>
+                     <div>
+                        <label class="label">Số lượng</label>
+                        <input v-model.number="form.copies" type="number" class="input" />
+                    </div>
+                     <div>
+                        <label class="label">Năm XB</label>
+                        <input v-model.number="form.publishedYear" type="number" class="input" />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="label">Link Ảnh bìa (URL)</label>
+                    <input v-model="form.image" class="input" placeholder="https://example.com/image.jpg" />
+                    <p class="text-[11px] text-slate-400 mt-1">Copy địa chỉ hình ảnh từ mạng và dán vào đây.</p>
+                </div>
+
+                <div class="pt-4 flex items-center justify-end gap-3">
+                    <button type="button" @click="switchToList" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg text-sm font-medium transition">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-md transition transform active:scale-95">
+                        {{ isEditing ? 'Cập nhật sách' : 'Thêm sách mới' }}
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm p-6 sticky top-6 text-center">
+                <h3 class="font-bold text-slate-800 mb-4">Xem trước ảnh bìa</h3>
+                <div class="w-full aspect-[2/3] bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative group">
+                    
+                    <img v-if="form.image" :src="form.image" class="w-full h-full object-cover" @error="imageError = true" />
+                    
+                    <div v-if="!form.image || imageError" class="text-slate-400 flex flex-col items-center">
+                        <span class="text-4xl mb-2">🖼️</span>
+                        <span class="text-xs">Chưa có ảnh</span>
+                    </div>
+
+                    <div v-if="form.image" class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition"></div>
+                </div>
+                <div class="mt-4 text-sm text-slate-600 font-medium line-clamp-2">
+                    {{ form.title || 'Tên sách sẽ hiện ở đây' }}
+                </div>
+                <div class="text-xs text-slate-400">{{ form.author || 'Tác giả' }}</div>
+            </div>
+        </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import BookService from "@/services/book.service";
 import { showToast } from "@/stores/toast";
 
+// State
+const viewMode = ref("list"); // 'list' | 'form'
 const books = ref([]);
-const q = ref("");
-const form = ref({});
-const tags = ref("");
-const sortKey = ref("title");
-const sortDir = ref("asc");
-const currentPage = ref(1);
-const pageSize = ref(5);
+const searchText = ref("");
+const isEditing = ref(false);
+const imageError = ref(false);
 
-function reset() {
-  form.value = {};
-  tags.value = "";
-}
+const initialForm = {
+  title: "", author: "", price: 0, copies: 1, 
+  publisher: "", publishedYear: new Date().getFullYear(),
+  image: "" // Thêm trường image
+};
+const form = reactive({ ...initialForm });
 
-async function load() {
+// Computed
+const filteredBooks = computed(() => {
+  if (!searchText.value) return books.value;
+  const k = searchText.value.toLowerCase();
+  return books.value.filter(b => 
+    b.title.toLowerCase().includes(k) || 
+    b.author.toLowerCase().includes(k)
+  );
+});
+
+// Methods
+async function loadBooks() {
   books.value = await BookService.getAll();
 }
 
-onMounted(load);
-
-// FILTER
-const filteredBooks = computed(() => {
-  if (!q.value) return books.value;
-  const key = q.value.toLowerCase();
-  return books.value.filter((b) => {
-    const fields = [
-      b.title,
-      b.author,
-      b.publisher,
-      Array.isArray(b.tags) ? b.tags.join(" ") : "",
-    ].filter(Boolean);
-    return fields.some((s) => s.toLowerCase().includes(key));
-  });
-});
-
-// SORT
-const sortedBooks = computed(() => {
-  const arr = [...filteredBooks.value];
-  arr.sort((a, b) => {
-    const ka = a[sortKey.value];
-    const kb = b[sortKey.value];
-
-    if (ka == null && kb == null) return 0;
-    if (ka == null) return sortDir.value === "asc" ? 1 : -1;
-    if (kb == null) return sortDir.value === "asc" ? -1 : 1;
-
-    if (typeof ka === "number" && typeof kb === "number") {
-      return sortDir.value === "asc" ? ka - kb : kb - ka;
-    }
-    const sa = String(ka).toLowerCase();
-    const sb = String(kb).toLowerCase();
-    if (sa < sb) return sortDir.value === "asc" ? -1 : 1;
-    if (sa > sb) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
-  });
-  return arr;
-});
-
-// PAGINATION
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedBooks.value.length / pageSize.value))
-);
-
-const paginatedBooks = computed(() => {
-  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value;
-  const start = (currentPage.value - 1) * pageSize.value;
-  return sortedBooks.value.slice(start, start + pageSize.value);
-});
-
-function setSort(key) {
-  if (sortKey.value === key) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortKey.value = key;
-    sortDir.value = "asc";
-  }
+function switchToList() {
+  viewMode.value = "list";
+  imageError.value = false;
 }
 
-function edit(b) {
-  form.value = { ...b };
-  tags.value = (b.tags || []).join(", ");
+function switchToCreate() {
+  Object.assign(form, initialForm);
+  delete form._id;
+  isEditing.value = false;
+  viewMode.value = "form";
+  imageError.value = false;
 }
 
-async function submit() {
+function editBook(book) {
+  Object.assign(form, book);
+  isEditing.value = true;
+  viewMode.value = "form";
+  imageError.value = false;
+}
+
+async function submitForm() {
   try {
-    const payload = {
-      ...form.value,
-      tags: tags.value
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-
-    if (form.value._id) {
-      await BookService.update(form.value._id, payload);
-      // cập nhật tại chỗ
-      const idx = books.value.findIndex((x) => x._id === form.value._id);
-      if (idx !== -1) {
-        books.value[idx] = { ...books.value[idx], ...payload };
-      }
-      showToast("Đã cập nhật sách", "success");
+    if (isEditing.value) {
+      await BookService.update(form._id, form);
+      showToast("Cập nhật sách thành công", "success");
     } else {
-      const created = await BookService.create(payload);
-      books.value.push(created);
-      showToast("Đã thêm sách mới", "success");
+      await BookService.create(form);
+      showToast("Thêm sách thành công", "success");
     }
-
-    reset();
+    await loadBooks();
+    switchToList();
   } catch (e) {
-    showToast("Thao tác với sách thất bại", "error");
+    showToast("Có lỗi xảy ra: " + (e.response?.data?.message || e.message), "error");
   }
 }
 
-async function remove(b) {
-  if (!confirm("Xóa sách này?")) return;
+async function deleteBook(id) {
+  if (!confirm("Bạn có chắc muốn xóa sách này?")) return;
   try {
-    await BookService.delete(b._id);
-    books.value = books.value.filter((x) => x._id !== b._id);
+    await BookService.delete(id);
     showToast("Đã xóa sách", "success");
+    await loadBooks();
   } catch (e) {
-    showToast("Không xóa được sách", "error");
+    showToast("Lỗi xóa sách", "error");
   }
 }
+
+onMounted(loadBooks);
 </script>
+
+<style scoped>
+.label {
+    /* @apply block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide; */
+}
+/* Trong trường hợp bạn vẫn muốn dùng @apply ở đây vì nó nằm trong scoped của component này và đã fix css, 
+   tuy nhiên để an toàn tuyệt đối tôi sẽ viết css thường dưới đây */
+.input {
+    width: 100%;
+    padding: 0.5rem 0.75rem; /* py-2 px-3 */
+    border: 1px solid #e2e8f0; /* border-slate-200 */
+    border-radius: 0.5rem; /* rounded-lg */
+    font-size: 0.875rem; /* text-sm */
+    transition-property: all;
+    transition-duration: 200ms;
+}
+.input:focus {
+    outline: none;
+    border-color: #6366f1; /* indigo-500 */
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+</style>
