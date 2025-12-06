@@ -90,13 +90,10 @@ const links = computed(() => {
     { to: "/admin/borrows", label: "Quản lý Mượn", icon: "📄" },
   ];
 
-  // Chỉ Admin mới thấy menu quản lý con người
+  // Chỉ Admin mới thấy menu quản lý tài khoản
   if (auth.isAdmin()) {
-    menu.push(
-      { to: "/admin/users", label: "Quản lý Tài khoản", icon: "👤" },
-      // [SỬA] Thay icon text "id-card" thành Emoji "🪪" hoặc xóa dòng này nếu bạn muốn gộp vào User
-      { to: "/admin/staff", label: "Hồ sơ Nhân viên", icon: "🪪" } 
-    );
+    // Chỉ giữ lại dòng này
+    menu.push({ to: "/admin/users", label: "Quản lý Tài khoản", icon: "👤" });
   }
   
   return menu;

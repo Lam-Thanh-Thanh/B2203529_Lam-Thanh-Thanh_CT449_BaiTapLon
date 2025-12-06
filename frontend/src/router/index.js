@@ -14,7 +14,6 @@ import AdminDashboard from "@/views/AdminDashboard.vue";
 import AdminBooks from "@/views/AdminBooks.vue";
 import AdminBorrows from "@/views/AdminBorrows.vue";
 import AdminUsers from "@/views/AdminUsers.vue";
-import AdminStaff from "@/views/AdminStaff.vue"; // mới
 import AdminPublishers from "@/views/AdminPublishers.vue"; // [Thêm]
 
 const routes = [
@@ -43,7 +42,6 @@ const routes = [
       { path: "books", component: AdminBooks },
       { path: "borrows", component: AdminBorrows },
       { path: "users", component: AdminUsers },
-      { path: "staff", component: AdminStaff },
       { path: "publishers", component: AdminPublishers }, // [Thêm]
       { path: "", redirect: "/admin/dashboard" },
     ],
