@@ -50,16 +50,24 @@ class BorrowService {
     return await this.findById(result.insertedId);
   }
 
-  // NÂNG CẤP: Sử dụng Aggregate để lấy chi tiết tên Sách, Độc giả, Nhân viên
   async findAll({ status, maDocGia } = {}) {
     const filter = {};
     if (status) filter.status = status;
-    if (maDocGia) filter.maDocGia = new ObjectId(maDocGia);
+    
+    // FIX: Đảm bảo chuyển string sang ObjectId
+    if (maDocGia) {
+        try {
+            filter.maDocGia = new ObjectId(maDocGia);
+        } catch (e) {
+            // Nếu maDocGia gửi lên không đúng định dạng ObjectId -> trả về rỗng luôn
+            return [];
+        }
+    }
 
     const pipeline = [
       { $match: filter },
       { $sort: { createdAt: -1 } },
-      // Join với bảng Readers để lấy tên độc giả
+      // Join Reader
       {
         $lookup: {
           from: "readers",
@@ -69,7 +77,7 @@ class BorrowService {
         },
       },
       { $unwind: { path: "$readerDetail", preserveNullAndEmptyArrays: true } },
-      // Join với bảng Books để lấy tên sách
+      // Join Book
       {
         $lookup: {
           from: "books",
@@ -79,7 +87,7 @@ class BorrowService {
         },
       },
       { $unwind: { path: "$bookDetail", preserveNullAndEmptyArrays: true } },
-      // Join với bảng Users để lấy tên Nhân viên (admin) xử lý (dựa vào msnv)
+      // Join Staff (User)
       {
         $lookup: {
           from: "users",
@@ -89,7 +97,6 @@ class BorrowService {
         },
       },
       { $unwind: { path: "$staffDetail", preserveNullAndEmptyArrays: true } },
-      // Chọn các trường cần hiển thị
       {
         $project: {
           _id: 1,
@@ -98,13 +105,12 @@ class BorrowService {
           ngayTra: 1,
           dueDate: 1,
           createdAt: 1,
-          // Lấy thông tin chi tiết
           maDocGia: 1,
+          // Lấy thông tin hiển thị
           readerName: { $concat: ["$readerDetail.hoLot", " ", "$readerDetail.ten"] },
-          maSach: 1,
           bookTitle: "$bookDetail.title",
-          // Tên nhân viên xử lý
-          staffName: "$staffDetail.username", // Hoặc staffDetail.email tùy bạn
+          bookImage: "$bookDetail.image", // Cần lấy ảnh để hiển thị đẹp
+          staffName: "$staffDetail.username",
         },
       },
     ];

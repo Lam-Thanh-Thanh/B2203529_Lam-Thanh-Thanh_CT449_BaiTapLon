@@ -1,233 +1,175 @@
 <template>
-  <section>
-    <h2 class="text-xl font-semibold mb-3">Lịch sử mượn của tôi</h2>
-
-    <div v-if="!auth.readerId()" class="text-sm text-rose-600 mb-3">
-      Bạn cần đăng nhập bằng tài khoản user để xem lịch sử.
+  <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+    <div class="flex items-center justify-between">
+      <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+        <span>🗂️</span> Lịch sử mượn sách
+      </h2>
+      <div class="text-sm text-slate-500 bg-white px-3 py-1 rounded-full shadow-sm border border-slate-100">
+        Đã mượn <span class="font-bold text-indigo-600">{{ borrows.length }}</span> cuốn
+      </div>
     </div>
 
-    <div v-else class="bg-white border rounded-xl p-4 shadow-sm">
-      <div
-        class="flex flex-col gap-2 mb-3 md:flex-row md:items-center md:justify-between"
+    <div v-if="!readerId" class="p-6 bg-amber-50 border border-amber-100 rounded-xl text-center space-y-3">
+      <div class="text-4xl">⚠️</div>
+      <h3 class="text-amber-800 font-semibold">Chưa tìm thấy thông tin độc giả</h3>
+      <p class="text-sm text-amber-700">
+        Có thể phiên đăng nhập đã cũ. Vui lòng đăng xuất và đăng nhập lại để hệ thống cập nhật dữ liệu.
+      </p>
+      <button @click="reLogin" class="bg-amber-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-amber-700 transition">
+        Đăng nhập lại
+      </button>
+    </div>
+
+    <div v-else-if="loading" class="py-12 text-center text-slate-500 flex flex-col items-center">
+      <div class="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-2"></div>
+      Đang tải dữ liệu...
+    </div>
+
+    <div v-else-if="borrows.length === 0" class="text-center py-16 bg-white rounded-2xl border border-slate-100 shadow-sm">
+      <div class="text-6xl mb-4 opacity-50">📚</div>
+      <h3 class="text-lg font-medium text-slate-800">Bạn chưa mượn cuốn sách nào</h3>
+      <p class="text-slate-500 text-sm mt-1 mb-6">Thư viện có rất nhiều sách hay đang chờ bạn.</p>
+      <router-link to="/" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+        Khám phá ngay &rarr;
+      </router-link>
+    </div>
+
+    <div v-else class="space-y-4">
+      <div 
+        v-for="item in borrows" 
+        :key="item._id" 
+        class="group bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
       >
-        <div class="flex items-center gap-2 text-sm">
-          <span class="text-slate-600">Sắp xếp theo:</span>
-          <select
-            v-model="sortKey"
-            class="border rounded-lg p-1.5 text-xs"
-          >
-            <option value="ngayMuon">Ngày mượn</option>
-            <option value="ngayTra">Ngày trả</option>
-            <option value="status">Trạng thái</option>
-          </select>
-          <button
-            class="px-2 py-1 border rounded-lg text-xs"
-            @click="toggleDir"
-          >
-            {{ sortDir === "asc" ? "↑ Tăng dần" : "↓ Giảm dần" }}
-          </button>
-        </div>
+        <div class="absolute left-0 top-0 bottom-0 w-1.5" :class="statusColor(item.status)"></div>
 
-        <div class="flex items-center gap-2 text-xs">
-          <span class="text-slate-500">Hiển thị</span>
-          <select
-            v-model.number="pageSize"
-            class="border rounded-lg p-1.5 text-xs"
-          >
-            <option :value="5">5 / trang</option>
-            <option :value="10">10 / trang</option>
-          </select>
-        </div>
-      </div>
+        <div class="flex flex-col md:flex-row gap-5">
+          <div class="w-full md:w-20 h-28 flex-shrink-0 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 shadow-inner">
+            <img 
+              :src="item.bookImage || 'https://placehold.co/100x140?text=No+Img'" 
+              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+              alt="Book Cover" 
+            />
+          </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full border text-sm">
-          <thead>
-            <tr class="bg-slate-50">
-              <th class="border p-2 text-left">Sách</th>
-              <th class="border p-2 text-center">Trạng thái</th>
-              <th class="border p-2 text-center">Ngày mượn</th>
-              <th class="border p-2 text-center">Hạn trả</th>
-              <th class="border p-2 text-center">Ngày trả</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="r in paginatedRows" :key="r._id">
-              <td class="border p-2">
-                <div class="font-semibold">
-                  {{ bookName(r.maSach) }}
-                </div>
-                <div class="text-[11px] text-slate-500">
-                  ID phiếu: {{ r._id }}
-                </div>
-              </td>
-              <td class="border p-2 text-center">
-                <span
-                  class="px-2 py-0.5 rounded-full text-xs font-medium"
-                  :class="statusClass(r.status)"
-                >
-                  {{ r.status }}
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h3 class="font-bold text-slate-800 text-lg leading-tight truncate pr-4" :title="item.bookTitle">
+                  {{ item.bookTitle || 'Sách không xác định' }}
+                </h3>
+                <p class="text-xs text-slate-400 font-mono mt-1">#{{ item._id }}</p>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-bold border" :class="statusBadge(item.status)">
+                {{ statusText(item.status) }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
+              <div>
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">Ngày yêu cầu</span>
+                <span class="font-medium text-slate-700">{{ formatDate(item.createdAt) }}</span>
+              </div>
+              
+              <div v-if="item.ngayMuon">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">Ngày mượn</span>
+                <span class="font-medium text-slate-700">{{ formatDate(item.ngayMuon) }}</span>
+              </div>
+              
+              <div v-if="['borrowed', 'returned'].includes(item.status) && item.dueDate">
+                <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">Hạn trả</span>
+                <span class="font-medium" :class="isOverdue(item) ? 'text-rose-600 font-bold' : 'text-slate-700'">
+                  {{ formatDate(item.dueDate) }}
+                  <span v-if="isOverdue(item)" class="text-[10px] bg-rose-100 text-rose-600 px-1.5 rounded ml-1">Quá hạn</span>
                 </span>
-                <div
-                  v-if="isOverdue(r)"
-                  class="text-[11px] text-rose-600 mt-1"
-                >
-                  Quá hạn trả!
-                </div>
-              </td>
-              <td class="border p-2 text-center text-xs">
-                {{ fmt(r.ngayMuon) }}
-              </td>
-              <td class="border p-2 text-center text-xs">
-                {{ fmt(r.dueDate) }}
-              </td>
-              <td class="border p-2 text-center text-xs">
-                {{ fmt(r.ngayTra) }}
-              </td>
-            </tr>
-            <tr v-if="!paginatedRows.length">
-              <td colspan="5" class="border p-2 text-center text-slate-500">
-                Bạn chưa có lịch sử mượn sách.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+              </div>
 
-      <div
-        v-if="totalPages > 1"
-        class="flex items-center justify-between mt-3 text-xs text-slate-600"
-      >
-        <div>
-          Trang {{ currentPage }} / {{ totalPages }}
-          <span class="text-slate-400">
-            ({{ rows.length }} phiếu)
-          </span>
-        </div>
-        <div class="flex gap-1">
-          <button
-            class="px-2 py-1 border rounded disabled:opacity-40"
-            :disabled="currentPage === 1"
-            @click="currentPage--"
-          >
-            ‹
-          </button>
-          <button
-            class="px-2 py-1 border rounded disabled:opacity-40"
-            :disabled="currentPage === totalPages"
-            @click="currentPage++"
-          >
-            ›
-          </button>
+              <div v-if="item.status === 'returned'">
+                 <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">Ngày trả</span>
+                 <span class="font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">{{ formatDate(item.ngayTra) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import BorrowService from "@/services/borrow.service";
-import BookService from "@/services/book.service";
 import { auth } from "@/stores/auth";
+import { showToast } from "@/stores/toast";
 
-const rows = ref([]);
-const books = ref([]);
+const router = useRouter();
+const borrows = ref([]);
+const loading = ref(true);
+const readerId = ref(null);
 
-const sortKey = ref("ngayMuon");
-const sortDir = ref("desc");
-const currentPage = ref(1);
-const pageSize = ref(5);
-
-const bookMap = computed(() =>
-  Object.fromEntries(books.value.map((b) => [b._id, b]))
-);
-
-function bookName(id) {
-  return bookMap.value[id]?.title || id;
+function formatDate(d) {
+  if (!d) return "--/--";
+  return new Date(d).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
-function fmt(d) {
-  return d ? new Date(d).toLocaleString() : "";
-}
-function isOverdue(r) {
-  return (
-    r.status === "borrowed" &&
-    r.dueDate &&
-    new Date(r.dueDate).getTime() < Date.now()
-  );
-}
-function statusClass(s) {
-  switch (s) {
-    case "pending":
-      return "bg-slate-100 text-slate-700";
-    case "approved":
-      return "bg-amber-100 text-amber-800";
-    case "borrowed":
-      return "bg-blue-100 text-blue-800";
-    case "returned":
-      return "bg-emerald-100 text-emerald-800";
-    default:
-      return "bg-slate-100 text-slate-700";
+
+// Logic màu sắc trạng thái
+function statusColor(s) {
+  switch(s) {
+    case 'pending': return 'bg-yellow-400';
+    case 'approved': return 'bg-indigo-500';
+    case 'borrowed': return 'bg-blue-500';
+    case 'returned': return 'bg-emerald-500';
+    default: return 'bg-slate-300';
   }
 }
 
-async function load() {
-  const rid = auth.readerId();
-  if (!rid) return;
-  books.value = await BookService.getAll();
-  rows.value = await BorrowService.list({ maDocGia: rid });
-  currentPage.value = 1;
-}
-
-onMounted(load);
-
-watch(
-  () => auth.readerId(),
-  () => {
-    load();
+function statusBadge(s) {
+  switch(s) {
+    case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    case 'approved': return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+    case 'borrowed': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'returned': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    default: return 'bg-slate-100 text-slate-600 border-slate-200';
   }
-);
-
-// SORT & PAGINATION
-const sortedRows = computed(() => {
-  const arr = [...rows.value];
-  arr.sort((a, b) => {
-    let va = a[sortKey.value];
-    let vb = b[sortKey.value];
-
-    if (sortKey.value === "ngayMuon" || sortKey.value === "ngayTra") {
-      va = va ? new Date(va).getTime() : 0;
-      vb = vb ? new Date(vb).getTime() : 0;
-    }
-
-    if (va == null && vb == null) return 0;
-    if (va == null) return sortDir.value === "asc" ? 1 : -1;
-    if (vb == null) return sortDir.value === "asc" ? -1 : 1;
-
-    if (typeof va === "number" && typeof vb === "number") {
-      return sortDir.value === "asc" ? va - vb : vb - va;
-    }
-
-    const sa = String(va).toLowerCase();
-    const sb = String(vb).toLowerCase();
-    if (sa < sb) return sortDir.value === "asc" ? -1 : 1;
-    if (sa > sb) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
-  });
-  return arr;
-});
-
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedRows.value.length / pageSize.value))
-);
-
-const paginatedRows = computed(() => {
-  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value;
-  const start = (currentPage.value - 1) * pageSize.value;
-  return sortedRows.value.slice(start, start + pageSize.value);
-});
-
-function toggleDir() {
-  sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
 }
+
+function statusText(s) {
+  switch(s) {
+    case 'pending': return 'Đang chờ duyệt';
+    case 'approved': return 'Đã duyệt (Chờ lấy)';
+    case 'borrowed': return 'Đang mượn';
+    case 'returned': return 'Đã trả';
+    default: return s;
+  }
+}
+
+function isOverdue(item) {
+  if (item.status !== 'borrowed' || !item.dueDate) return false;
+  return new Date(item.dueDate) < new Date();
+}
+
+function reLogin() {
+  auth.logout();
+  router.push('/login');
+}
+
+onMounted(async () => {
+  readerId.value = auth.readerId();
+  
+  // Nếu không có readerId, dừng lại và hiển thị cảnh báo
+  if (!readerId.value) {
+    loading.value = false;
+    return;
+  }
+
+  try {
+    // Gọi API lọc theo maDocGia
+    borrows.value = await BorrowService.list({ maDocGia: readerId.value });
+  } catch (error) {
+    console.error(error);
+    showToast("Không thể tải dữ liệu. Vui lòng thử lại.", "error");
+  } finally {
+    loading.value = false;
+  }
+});
 </script>

@@ -1,85 +1,138 @@
 <template>
-  <section>
-    <h2 class="text-xl font-semibold mb-3">Quản lý phiếu mượn</h2>
-
-    <div class="bg-white border rounded-xl p-4 shadow-sm">
-      <div class="flex flex-col gap-2 mb-3 md:flex-row md:items-center md:justify-between">
-        <div class="flex gap-2 items-center">
-          <span class="text-sm text-slate-600">Trạng thái:</span>
-          <select class="border rounded-lg p-2 text-sm" v-model="status" @change="reload">
-            <option value="">Tất cả</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="borrowed">Đang mượn</option>
-            <option value="returned">Đã trả</option>
-          </select>
-          <button class="px-3 py-2 text-xs rounded-lg border hover:bg-slate-50" @click="reload">
-            Làm mới
-          </button>
-        </div>
+  <section class="space-y-6 animate-fade-in">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <h2 class="text-2xl font-bold text-slate-800">Quản lý Phiếu Mượn</h2>
+      
+      <div class="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+        <button 
+          v-for="s in ['all', 'pending', 'approved', 'borrowed', 'returned']" 
+          :key="s"
+          @click="changeStatus(s)"
+          class="px-4 py-1.5 text-xs font-semibold rounded-lg capitalize transition-all"
+          :class="currentStatus === (s === 'all' ? '' : s) 
+            ? 'bg-indigo-600 text-white shadow-sm' 
+            : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
+        >
+          {{ s === 'all' ? 'Tất cả' : s }}
+        </button>
       </div>
+    </div>
 
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full border text-sm">
-          <thead>
-            <tr class="bg-slate-50">
-              <th class="border p-2 text-left">Độc giả</th>
-              <th class="border p-2 text-left">Sách</th>
-              <th class="border p-2 text-center">NV Xử lý</th> <th class="border p-2 text-center" @click="setSort('status')">Trạng thái</th>
-              <th class="border p-2 text-center" @click="setSort('ngayMuon')">Ngày mượn</th>
-              <th class="border p-2 text-center">Hạn trả</th>
-              <th class="border p-2 text-center">Hành động</th>
+        <table class="w-full text-sm text-left">
+          <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+            <tr>
+              <th class="p-4 pl-6">Độc giả</th>
+              <th class="p-4">Sách mượn</th>
+              <th class="p-4 text-center">Trạng thái</th>
+              <th class="p-4">Thời gian</th>
+              <th class="p-4">Người duyệt</th>
+              <th class="p-4 text-center">Thao tác</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="r in paginatedRows" :key="r._id">
-              <td class="border p-2">
-                <div class="font-semibold">{{ r.readerName || 'Không rõ' }}</div>
-                <div class="text-[10px] text-slate-400 font-mono">{{ r.maDocGia }}</div>
-              </td>
-              <td class="border p-2">
-                {{ r.bookTitle || 'Sách đã xóa' }}
-              </td>
-              <td class="border p-2 text-center text-indigo-600 font-medium">
-                {{ r.staffName || '-' }}
+          <tbody class="divide-y divide-slate-100">
+            <tr v-for="r in paginatedRows" :key="r._id" class="hover:bg-slate-50/80 transition group">
+              <td class="p-4 pl-6">
+                <div class="flex items-center gap-3">
+                  <div class="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 flex items-center justify-center font-bold text-sm border border-white shadow-sm">
+                    {{ (r.readerName || 'U').charAt(0).toUpperCase() }}
+                  </div>
+                  <div>
+                    <div class="font-semibold text-slate-800">{{ r.readerName || 'Không rõ' }}</div>
+                    <div class="text-[10px] text-slate-400 font-mono tracking-tight">{{ r.maDocGia }}</div>
+                  </div>
+                </div>
               </td>
 
-              <td class="border p-2 text-center">
-                <span class="px-2 py-0.5 rounded-full text-xs font-medium" :class="statusClass(r.status)">
-                  {{ r.status }}
+              <td class="p-4">
+                <div class="flex items-center gap-3">
+                   <img 
+                      :src="r.bookImage || 'https://placehold.co/40x60?text=Sách'" 
+                      class="w-8 h-10 object-cover rounded shadow-sm border border-slate-100"
+                   />
+                   <div class="max-w-[180px]">
+                      <div class="font-medium text-slate-700 truncate" :title="r.bookTitle">{{ r.bookTitle || 'Sách đã xóa' }}</div>
+                   </div>
+                </div>
+              </td>
+
+              <td class="p-4 text-center">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm" :class="statusClass(r.status)">
+                  {{ statusText(r.status) }}
                 </span>
+                <div v-if="isOverdue(r)" class="text-[10px] text-rose-600 font-bold mt-1 flex items-center justify-center gap-1">
+                  <span>⚠️</span> Quá hạn
+                </div>
               </td>
-              <td class="border p-2 text-center text-xs">
-                {{ fmt(r.ngayMuon) }}
+
+              <td class="p-4">
+                <div class="text-xs space-y-1">
+                  <div class="flex items-center gap-2 text-slate-600">
+                    <span class="w-16 text-slate-400">Mượn:</span> 
+                    <span class="font-mono">{{ fmt(r.ngayMuon || r.createdAt) }}</span>
+                  </div>
+                  <div v-if="r.dueDate" class="flex items-center gap-2" :class="isOverdue(r) ? 'text-rose-600 font-bold' : 'text-slate-600'">
+                    <span class="w-16 text-slate-400">Hạn trả:</span> 
+                    <span class="font-mono">{{ fmt(r.dueDate) }}</span>
+                  </div>
+                </div>
               </td>
-              <td class="border p-2 text-center text-xs">
-                {{ fmt(r.dueDate) }}
-                <div v-if="isOverdue(r)" class="text-[11px] text-rose-600 mt-1">Quá hạn!</div>
+
+              <td class="p-4">
+                <div v-if="r.staffName" class="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-lg w-fit">
+                  <span>🛡️</span> {{ r.staffName }}
+                </div>
+                <span v-else class="text-xs text-slate-400 italic">--</span>
               </td>
-              <td class="border p-2 text-center">
-                <div class="flex flex-wrap gap-1 justify-center text-xs">
-                  <button v-if="r.status === 'pending'" class="px-2 py-1 border rounded hover:bg-green-50 text-green-700" @click="approve(r)">
-                    Duyệt
+
+              <td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                  <button 
+                    v-if="r.status === 'pending'" 
+                    @click="approve(r)"
+                    class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 hover:shadow-md transition"
+                    title="Duyệt phiếu"
+                  >
+                    <span class="text-lg">✓</span>
                   </button>
-                  <button v-if="['pending', 'approved'].includes(r.status)" class="px-2 py-1 border rounded hover:bg-blue-50 text-blue-700" @click="borrowed(r)">
-                    Đã mượn
+
+                  <button 
+                    v-if="['pending', 'approved'].includes(r.status)" 
+                    @click="borrowed(r)"
+                    class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 hover:shadow-md transition"
+                    title="Xác nhận đã lấy sách"
+                  >
+                    <span class="text-lg">📖</span>
                   </button>
-                  <button v-if="r.status === 'borrowed'" class="px-2 py-1 border rounded hover:bg-slate-50" @click="returned(r)">
-                    Đã trả
+
+                  <button 
+                    v-if="r.status === 'borrowed'" 
+                    @click="returned(r)"
+                    class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 hover:shadow-md transition"
+                    title="Xác nhận trả sách"
+                  >
+                    <span class="text-lg">↩️</span>
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="!paginatedRows.length">
-              <td colspan="7" class="border p-2 text-center text-slate-500">
-                Không có phiếu mượn.
+              <td colspan="6" class="p-8 text-center text-slate-400">
+                Không có dữ liệu phiếu mượn.
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-       <div v-if="totalPages > 1" class="flex items-center justify-between mt-3 text-xs">
-          </div>
+      
+      <div v-if="totalPages > 1" class="p-4 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+         <span class="text-xs text-slate-500">Trang {{ currentPage }} / {{ totalPages }}</span>
+         <div class="flex gap-2">
+            <button @click="currentPage--" :disabled="currentPage===1" class="px-3 py-1 border rounded bg-white hover:bg-slate-50 text-xs disabled:opacity-50">Trước</button>
+            <button @click="currentPage++" :disabled="currentPage===totalPages" class="px-3 py-1 border rounded bg-white hover:bg-slate-50 text-xs disabled:opacity-50">Sau</button>
+         </div>
+      </div>
     </div>
   </section>
 </template>
@@ -89,123 +142,75 @@ import { ref, computed, onMounted } from "vue";
 import BorrowService from "@/services/borrow.service";
 import { showToast } from "@/stores/toast";
 
-const status = ref("");
+const currentStatus = ref("");
 const rows = ref([]);
-
-// Không cần load BookService nữa vì API đã trả về tên sách
-const sortKey = ref("createdAt"); // Mặc định sort theo thời gian tạo mới nhất
-const sortDir = ref("desc");
 const currentPage = ref(1);
-const pageSize = ref(10); // Tăng default size lên cho dễ nhìn
-
-function fmt(d) {
-  return d ? new Date(d).toLocaleString('vi-VN') : "";
-}
-
-function isOverdue(r) {
-  return (
-    r.status === "borrowed" &&
-    r.dueDate &&
-    new Date(r.dueDate).getTime() < Date.now()
-  );
-}
+const pageSize = ref(10);
 
 function statusClass(s) {
   switch (s) {
-    case "pending": return "bg-gray-100 text-gray-700";
-    case "approved": return "bg-yellow-100 text-yellow-800";
-    case "borrowed": return "bg-blue-100 text-blue-800";
-    case "returned": return "bg-green-100 text-green-800";
-    default: return "bg-gray-100 text-gray-700";
+    case "pending": return "bg-yellow-50 text-yellow-700 border-yellow-200";
+    case "approved": return "bg-indigo-50 text-indigo-700 border-indigo-200";
+    case "borrowed": return "bg-blue-50 text-blue-700 border-blue-200";
+    case "returned": return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    default: return "bg-slate-50 text-slate-700 border-slate-200";
   }
+}
+
+function statusText(s) {
+  switch (s) {
+    case "pending": return "Chờ duyệt";
+    case "approved": return "Đã duyệt";
+    case "borrowed": return "Đang mượn";
+    case "returned": return "Đã trả";
+    default: return s;
+  }
+}
+
+function fmt(d) {
+  return d ? new Date(d).toLocaleDateString('vi-VN') : "--";
+}
+
+function isOverdue(r) {
+  return r.status === "borrowed" && r.dueDate && new Date(r.dueDate) < new Date();
 }
 
 async function reload() {
   const params = {};
-  if (status.value) params.status = status.value;
-  rows.value = await BorrowService.list(params);
-  currentPage.value = 1;
-}
-
-onMounted(async () => {
-  await reload();
-});
-
-// Logic Sort & Pagination giữ nguyên nhưng tối ưu sortKey
-const sortedRows = computed(() => {
-  const arr = [...rows.value];
-  arr.sort((a, b) => {
-    let va = a[sortKey.value];
-    let vb = b[sortKey.value];
-    
-    // Xử lý ngày tháng
-    if (['ngayMuon', 'createdAt', 'dueDate', 'ngayTra'].includes(sortKey.value)) {
-        va = va ? new Date(va).getTime() : 0;
-        vb = vb ? new Date(vb).getTime() : 0;
-    }
-
-    if (va == null && vb == null) return 0;
-    if (va == null) return sortDir.value === "asc" ? 1 : -1;
-    if (vb == null) return sortDir.value === "asc" ? -1 : 1;
-
-    if (typeof va === "number" && typeof vb === "number") {
-      return sortDir.value === "asc" ? va - vb : vb - va;
-    }
-
-    const sa = String(va).toLowerCase();
-    const sb = String(vb).toLowerCase();
-    if (sa < sb) return sortDir.value === "asc" ? -1 : 1;
-    if (sa > sb) return sortDir.value === "asc" ? 1 : -1;
-    return 0;
-  });
-  return arr;
-});
-
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(sortedRows.value.length / pageSize.value))
-);
-
-const paginatedRows = computed(() => {
-  if (currentPage.value > totalPages.value) currentPage.value = totalPages.value;
-  const start = (currentPage.value - 1) * pageSize.value;
-  return sortedRows.value.slice(start, start + pageSize.value);
-});
-
-function setSort(key) {
-  if (sortKey.value === key) {
-    sortDir.value = sortDir.value === "asc" ? "desc" : "asc";
-  } else {
-    sortKey.value = key;
-    sortDir.value = "asc";
+  if (currentStatus.value) params.status = currentStatus.value;
+  try {
+    rows.value = await BorrowService.list(params);
+    currentPage.value = 1;
+  } catch(e) {
+    showToast("Lỗi tải dữ liệu", "error");
   }
 }
+
+function changeStatus(s) {
+  currentStatus.value = s === 'all' ? '' : s;
+  reload();
+}
+
+onMounted(reload);
+
+// Pagination Logic
+const totalPages = computed(() => Math.ceil(rows.value.length / pageSize.value) || 1);
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return rows.value.slice(start, start + pageSize.value);
+});
 
 // Actions
 async function approve(r) {
-  try {
-    await BorrowService.approve(r._id);
-    showToast("Đã duyệt phiếu mượn", "success");
-    await reload();
-  } catch (e) {
-    showToast("Lỗi duyệt: " + e.message, "error");
-  }
+  try { await BorrowService.approve(r._id); showToast("Đã duyệt!", "success"); reload(); } 
+  catch (e) { showToast(e.message, "error"); }
 }
 async function borrowed(r) {
-  try {
-    await BorrowService.markBorrowed(r._id);
-    showToast("Đã xác nhận mượn", "success");
-    await reload();
-  } catch (e) {
-    showToast("Lỗi xác nhận: " + e.message, "error");
-  }
+  try { await BorrowService.markBorrowed(r._id); showToast("Xác nhận đã mượn!", "success"); reload(); } 
+  catch (e) { showToast(e.message, "error"); }
 }
 async function returned(r) {
-  try {
-    await BorrowService.markReturned(r._id);
-    showToast("Đã trả sách", "success");
-    await reload();
-  } catch (e) {
-    showToast("Lỗi trả sách: " + e.message, "error");
-  }
+  try { await BorrowService.markReturned(r._id); showToast("Xác nhận đã trả!", "success"); reload(); } 
+  catch (e) { showToast(e.message, "error"); }
 }
 </script>
