@@ -23,10 +23,20 @@ exports.create = async (req, res, next) => {
 
 exports.findAll = async (req, res, next) => {
   try {
-    const { status, maDocGia } = req.query;
+    const { status } = req.query;
+
+    // Chỉ lấy lịch sử của user đang đăng nhập
+    const maDocGia = req.user?.readerId;
+
+    if (!maDocGia) {
+      return res.status(400).json({ message: "User has no reader profile" });
+    }
+
     const data = await svc().findAll({ status, maDocGia });
     res.json(data);
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 };
 
 exports.findOne = async (req, res, next) => {
