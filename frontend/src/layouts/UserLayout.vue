@@ -153,8 +153,10 @@ import Toast from "@/components/Toast.vue";
 
 const router = useRouter();
 function handleLogout() {
-  auth.logout();
-  router.push("/login");
+if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+    auth.logout();
+    router.push("/login");
+  }
 }
 </script>
 

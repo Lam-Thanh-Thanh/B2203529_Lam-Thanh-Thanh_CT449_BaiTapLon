@@ -106,7 +106,16 @@
             </h3>
             
             <p class="text-xs text-slate-500 mb-2">{{ book.author }}</p>
-            
+            <div class="flex flex-wrap gap-1 mb-2" v-if="book.tags && book.tags.length > 0">
+                <span 
+                    v-for="tag in book.tags.slice(0, 3)" 
+                    :key="tag" 
+                    class="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 whitespace-nowrap"
+                >
+                    #{{ tag }}
+                </span>
+                <span v-if="book.tags.length > 3" class="text-[10px] text-slate-400">+{{book.tags.length - 3}}</span>
+            </div>
             <div class="mt-auto pt-2 border-t border-slate-100 flex flex-col gap-1">
                 <div class="text-lg font-extrabold text-red-600">
                     {{ book.price ? book.price.toLocaleString() + ' đ' : 'Miễn phí' }}
@@ -190,8 +199,8 @@ const filteredBooks = computed(() => {
   const k = searchText.value.toLowerCase();
   return books.value.filter(b => 
     b.title.toLowerCase().includes(k) || 
-    b.author.toLowerCase().includes(k)
-  );
+    b.author.toLowerCase().includes(k) ||
+    (Array.isArray(b.tags) && b.tags.some(tag => tag.toLowerCase().includes(k)))  );
 });
 
 // Tính tổng số trang

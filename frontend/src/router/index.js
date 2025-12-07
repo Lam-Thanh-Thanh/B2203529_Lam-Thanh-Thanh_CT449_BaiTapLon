@@ -28,33 +28,36 @@ const routes = [
   {
     path: "/",
     component: UserLayout,
-    meta: { role: "user" },
     children: [
       { 
         path: "", 
         name: "home", // [THÊM] Đặt tên route là 'home'
-        component: Home 
+        component: Home ,
+        meta: { requiresAuth: false }, // Đổi thành false: Cho phép khách xem
       },
       { 
         path: "library", 
         name: "library", // [QUAN TRỌNG] Đặt tên route là 'library' để khớp với lỗi
-        component: BooksLibrary 
+        component: BooksLibrary ,
+        meta: { requiresAuth: false }, // Đổi thành false: Cho phép khách xem
       },
       {
         path: 'library/book/:id',
         name: 'book.details',
         component: BookDetails,
-        props: true // Cho phép truyền biến id vào component
-      },
+        props: true, // Cho phép truyền biến id vào component      
+        },
       { 
         path: "history", 
         name: "history", // [THÊM] Nên đặt tên luôn cho chuẩn
-        component: BorrowHistory 
+        component: BorrowHistory,
+        meta: { requiresAuth: true },
       },
       { 
         path: "profile", 
         name: "profile", // [THÊM]
-        component: UserProfile 
+        component: UserProfile,
+        meta: { requiresAuth: true },
       },
       
     ],

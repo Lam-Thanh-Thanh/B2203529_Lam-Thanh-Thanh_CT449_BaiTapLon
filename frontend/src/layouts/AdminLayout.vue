@@ -106,7 +106,9 @@ function isActive(path) {
   return route.path.startsWith(path);
 }
 function logout() {
-  auth.logout();
-  router.push("/login");
+if (window.confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+    auth.logout();
+    router.push("/login");
+  }
 }
 </script>

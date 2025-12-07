@@ -138,6 +138,14 @@
                         <label class="label">Tác giả <span class="text-rose-500">*</span></label>
                         <input v-model="form.author" class="input" required />
                     </div>
+                    <div class="mt-4">
+                      <label class="label">Tags / Thể loại (Ngăn cách bằng dấu phẩy)</label>
+                      <input 
+                          v-model="form.tags" 
+                          class="input" 
+                          placeholder="Ví dụ: Tiểu thuyết, Trinh thám, Kinh dị..." 
+                      />
+                  </div>
                      <div>
                       <label class="label">Nhà xuất bản</label>
                       <select v-model="form.maNXB" class="input bg-white">
@@ -264,7 +272,8 @@ watch(searchText, () => {
 const initialForm = {
   title: "", author: "", price: 0, copies: 1, 
   publisher: "", publishedYear: new Date().getFullYear(),
-  image: "" 
+  image: "",
+  tags: "",
 };
 const form = reactive({ ...initialForm });
 
@@ -303,6 +312,11 @@ function switchToCreate() {
 
 function editBook(book) {
   Object.assign(form, book);
+  if (book.tags && Array.isArray(book.tags)) {
+      form.tags = book.tags.join(', ');
+  } else {
+      form.tags = "";
+  }
   selectedFile.value = null;
   previewImage.value = null;
   if(fileInput.value) fileInput.value.value = "";
@@ -315,7 +329,7 @@ async function submitForm() {
     const formData = new FormData();
     formData.append("title", form.title);
     formData.append("author", form.author);
-    
+    formData.append("tags", form.tags);
     if (form.maNXB) {
         formData.append("maNXB", form.maNXB);
         const selectedNXB = publishers.value.find(p => p._id === form.maNXB);

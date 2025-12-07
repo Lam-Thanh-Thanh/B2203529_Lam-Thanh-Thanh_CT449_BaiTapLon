@@ -20,6 +20,9 @@ extractBookData(payload) {
       maNXB: payload.maNXB ? new ObjectId(payload.maNXB) : undefined,
       // [THÊM] Lưu tên NXB (String) để dễ hiển thị mà không cần join bảng nhiều (tùy chọn)
       publisher: payload.publisherName,
+      tags: payload.tags 
+            ? payload.tags.split(',').map(tag => tag.trim()).filter(tag => tag !== "") 
+            : [],
     };
 
     // Xóa các trường undefined
