@@ -15,6 +15,8 @@ import AdminBooks from "@/views/AdminBooks.vue";
 import AdminBorrows from "@/views/AdminBorrows.vue";
 import AdminUsers from "@/views/AdminUsers.vue";
 import AdminPublishers from "@/views/AdminPublishers.vue"; // [Thêm]
+import BooksLibrary from "@/views/BooksLibrary.vue";
+import Home from "@/views/Home.vue"; // File trang chủ mới tạo
 
 const routes = [
   { path: "/login", component: Login },
@@ -26,9 +28,26 @@ const routes = [
     component: UserLayout,
     meta: { role: "user" },
     children: [
-      { path: "", component: UserBooks },
-      { path: "history", component: BorrowHistory },
-      { path: "profile", component: UserProfile },
+      { 
+        path: "", 
+        name: "home", // [THÊM] Đặt tên route là 'home'
+        component: Home 
+      },
+      { 
+        path: "library", 
+        name: "library", // [QUAN TRỌNG] Đặt tên route là 'library' để khớp với lỗi
+        component: BooksLibrary 
+      },
+      { 
+        path: "history", 
+        name: "history", // [THÊM] Nên đặt tên luôn cho chuẩn
+        component: BorrowHistory 
+      },
+      { 
+        path: "profile", 
+        name: "profile", // [THÊM]
+        component: UserProfile 
+      },
     ],
   },
 

@@ -1,22 +1,25 @@
 <template>
-  <div class="min-h-screen bg-slate-50 font-sans text-slate-800">
+  <div class="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
     <header class="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm/50 backdrop-blur-md bg-white/90">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           
-          <div class="flex items-center gap-2 cursor-pointer" @click="$router.push('/books')">
+          <div class="flex items-center gap-2 cursor-pointer" @click="$router.push('/')">
             <div class="bg-indigo-600 text-white p-1.5 rounded-lg font-bold text-xl">📚</div>
             <span class="font-bold text-xl tracking-tight text-indigo-900">LibManager</span>
           </div>
 
           <nav class="hidden md:flex space-x-8">
-            <router-link to="/books" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
+            <router-link :to="{ name: 'home' }" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
+              Trang chủ
+            </router-link>
+            <router-link :to="{ name: 'library' }" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
               Thư viện sách
             </router-link>
-            <router-link to="/history" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
+            <router-link :to="{ name: 'history' }" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
               Lịch sử mượn
             </router-link>
-            <router-link to="/profile" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
+            <router-link :to="{ name: 'profile' }" active-class="text-indigo-600 bg-indigo-50" class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-slate-50 transition">
               Cá nhân
             </router-link>
           </nav>
@@ -36,7 +39,7 @@
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="flex-grow">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -44,10 +47,69 @@
       </router-view>
     </main>
     
-    <footer class="border-t border-slate-200 mt-12 py-6 bg-white">
-        <div class="text-center text-slate-400 text-sm">
-            &copy; 2025 LibManager. Hệ thống quản lý thư viện hiện đại.
+    <footer class="bg-slate-900 text-slate-300 pt-16 pb-8 mt-auto border-t border-slate-800">
+      <div class="container mx-auto px-4 max-w-7xl">
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-10 border-b border-slate-800 pb-12">
+          <div class="col-span-2 md:col-span-1">
+            <div class="flex items-center gap-2 mb-6">
+              <div class="bg-white text-indigo-900 p-1.5 rounded-lg font-bold text-xl">📚</div>
+              <span class="font-bold text-xl text-white">LibManager</span>
+            </div>
+            <p class="text-sm leading-relaxed mb-6 text-slate-400">
+              Nền tảng quản lý thư viện số hàng đầu, mang đến trải nghiệm đọc sách hiện đại và tiện lợi cho cộng đồng.
+            </p>
+            <div class="flex gap-3">
+              <a href="#" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition text-slate-400">f</a>
+              <a href="#" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition text-slate-400">t</a>
+              <a href="#" class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center hover:bg-indigo-600 hover:text-white transition text-slate-400">in</a>
+            </div>
+          </div>
+          
+          <div>
+            <h4 class="text-white font-bold mb-6">Khám phá</h4>
+            <ul class="space-y-3 text-sm text-slate-400">
+              <li><router-link :to="{name: 'library'}" class="hover:text-indigo-400 transition">Sách mới</router-link></li>
+              <li><router-link :to="{name: 'library'}" class="hover:text-indigo-400 transition">Sách xem nhiều</router-link></li>
+              <li><a href="#" class="hover:text-indigo-400 transition">Bộ sưu tập</a></li>
+              <li><a href="#" class="hover:text-indigo-400 transition">Tác giả</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-white font-bold mb-6">Hỗ trợ</h4>
+            <ul class="space-y-3 text-sm text-slate-400">
+              <li><a href="#" class="hover:text-indigo-400 transition">Quy định mượn</a></li>
+              <li><a href="#" class="hover:text-indigo-400 transition">Chính sách gia hạn</a></li>
+              <li><a href="#" class="hover:text-indigo-400 transition">Báo mất sách</a></li>
+              <li><a href="#" class="hover:text-indigo-400 transition">Câu hỏi thường gặp</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="text-white font-bold mb-6">Liên hệ</h4>
+            <ul class="space-y-4 text-sm text-slate-400">
+              <li class="flex items-start gap-3">
+                <span class="text-indigo-500 mt-0.5">📍</span> 123 Đường 3/2, Ninh Kiều, Cần Thơ
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="text-indigo-500">📞</span> 090 123 4567
+              </li>
+              <li class="flex items-center gap-3">
+                <span class="text-indigo-500">📧</span> support@libmanager.com
+              </li>
+            </ul>
+          </div>
         </div>
+
+        <div class="pt-8 text-center text-xs text-slate-500 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p>&copy; 2025 LibManager. All rights reserved.</p>
+          <div class="flex gap-6">
+            <a href="#" class="hover:text-white transition">Privacy Policy</a>
+            <a href="#" class="hover:text-white transition">Terms of Service</a>
+          </div>
+        </div>
+      </div>
     </footer>
 
     <Toast />
@@ -67,7 +129,6 @@ function handleLogout() {
 </script>
 
 <style>
-/* Transition Effects */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.2s ease;
