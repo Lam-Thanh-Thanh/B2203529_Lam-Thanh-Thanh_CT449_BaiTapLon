@@ -63,7 +63,9 @@
               </div>
               <div>
                 <p class="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Giá bìa</p>
-                <p class="font-bold text-slate-800">{{ book.price ? book.price.toLocaleString() : '---' }} đ</p>
+                <p class="font-extrabold text-red-600 text-xl">
+                  {{ book.price ? book.price.toLocaleString() : '---' }} đ
+                </p>
               </div>
               <div>
                 <p class="text-slate-400 text-xs uppercase font-bold tracking-wider mb-1">Kho</p>
@@ -156,23 +158,49 @@
         </div>
 
         <div class="lg:col-span-1" data-aos="fade-up" data-aos-delay="200">
-          <h3 class="font-bold text-slate-800 mb-4 text-lg">Có thể bạn sẽ thích</h3>
+          <div class="lg:col-span-1" data-aos="fade-up" data-aos-delay="200">
+          <h3 class="font-bold text-slate-800 mb-4 text-lg">Sách mới cập nhật</h3>
           <div class="space-y-4">
+            <div v-if="relatedBooks.length === 0" class="text-slate-400 text-sm italic">
+                Đang tải sách liên quan...
+            </div>
+
             <div 
               v-for="rb in relatedBooks" 
-              :key="rb.title" 
-              class="group bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition flex gap-4 cursor-pointer"
+              :key="rb._id" 
+              @click="goToDetails(rb._id)"
+              class="group bg-white p-3 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300 transition flex gap-4 cursor-pointer"
             >
-              <div class="w-16 h-20 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
-                <img :src="rb.image" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+              <div class="w-16 h-20 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0 relative">
+                <img 
+                    :src="rb.image || 'https://placehold.co/400x600?text=No+Cover'" 
+                    class="w-full h-full object-cover group-hover:scale-110 transition duration-500" 
+                />
               </div>
-              <div class="flex-1 min-w-0 py-1">
-                <h4 class="font-bold text-slate-800 text-sm truncate group-hover:text-indigo-600">{{ rb.title }}</h4>
-                <p class="text-xs text-slate-500 mb-2">{{ rb.author }}</p>
-                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">Có sẵn</span>
+              <div class="flex-1 min-w-0 py-1 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm truncate group-hover:text-indigo-600" :title="rb.title">
+                        {{ rb.title }}
+                    </h4>
+                    <p class="text-xs text-slate-500 line-clamp-1">{{ rb.author }}</p>
+                </div>
+                
+                <div class="flex items-center justify-between mt-1">
+                    <span v-if="rb.copies > 0" class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                        Sẵn sàng
+                    </span>
+                    <span v-else class="text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded">
+                        Hết hàng
+                    </span>
+                    
+                    <span class="text-xs font-bold text-red-500">
+                        {{ rb.price ? rb.price.toLocaleString() : '---' }}đ
+                    </span>
+                </div>
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -198,15 +226,10 @@ import AOS from 'aos';
 const route = useRoute();
 const router = useRouter();
 const book = ref(null);
+const relatedBooks = ref([]); // Chứa danh sách sách liên quan
 const isBorrowing = ref(false);
 const activeTab = ref('Mô tả');
 const isFavorited = ref(false);
-
-const relatedBooks = [
-  { title: "Nhà Giả Kim", author: "Paulo Coelho", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=200" },
-  { title: "Sapiens", author: "Yuval Noah Harari", image: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=200" },
-  { title: "Atomic Habits", author: "James Clear", image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=200" },
-];
 
 const fetchBook = async () => {
   book.value = null;
@@ -214,6 +237,8 @@ const fetchBook = async () => {
   try {
     book.value = await BookService.get(id);
     
+    // Sau khi có sách hiện tại, gọi hàm lấy sách liên quan
+    fetchRelatedBooks(id);
     // Kiểm tra trạng thái yêu thích
     if (auth.user) {
         try {
@@ -231,6 +256,33 @@ const fetchBook = async () => {
     showToast("Không tìm thấy sách hoặc lỗi kết nối", "error");
     router.push({ name: 'library' });
   }
+};
+
+// Hàm lấy 3 sách mới nhất (trừ cuốn đang xem)
+const fetchRelatedBooks = async (currentBookId) => {
+    try {
+        const response = await BookService.getAll();
+        // Giả sử API trả về mảng sách. Nếu API trả về { data: [...] } thì sửa thành response.data
+        const allBooks = Array.isArray(response) ? response : (response.data || []);
+        
+        // 1. Lọc bỏ cuốn sách đang xem
+        // 2. Đảo ngược mảng để lấy sách mới nhất (giả định sách mới thêm nằm cuối mảng)
+        // 3. Cắt lấy 3 phần tử đầu tiên
+        relatedBooks.value = allBooks
+            .filter(b => b._id !== currentBookId)
+            // .reverse() 
+            .slice(0, 3);
+            
+    } catch (error) {
+        console.error("Lỗi tải sách liên quan:", error);
+    }
+};
+
+// Chuyển trang khi click vào sách liên quan
+const goToDetails = (id) => {
+    router.push({ name: 'book.details', params: { id } });
+    // Scroll lên đầu trang cho mượt
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const handleBorrow = async () => {

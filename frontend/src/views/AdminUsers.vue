@@ -1,5 +1,5 @@
 <template>
-  <section class="space-y-6 animate-fade-in">
+  <section class="space-y-6 animate-fade-in pb-20">
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-bold text-slate-800">Quản lý Tài khoản</h2>
       
@@ -29,7 +29,25 @@
         </button>
     </div>
 
-    <div class="bg-white border border-slate-200 rounded-b-xl rounded-tr-xl shadow-sm overflow-hidden min-h-[300px]">
+    <div class="bg-white border border-slate-200 rounded-b-xl rounded-tr-xl shadow-sm overflow-hidden min-h-[400px]">
+      
+      <div class="p-4 border-b border-slate-100 flex gap-4">
+        <div class="relative flex-1 max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input 
+                v-model="searchText"
+                type="text" 
+                class="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition"
+                placeholder="Tìm kiếm username hoặc họ tên..."
+            >
+        </div>
+        <div class="flex items-center text-xs text-slate-400">
+            Tổng: {{ filteredUsers.length }} tài khoản
+        </div>
+      </div>
+
       <div class="overflow-x-auto">
         <table class="w-full text-sm text-left">
           <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
@@ -50,7 +68,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="u in filteredUsers" :key="u._id" class="hover:bg-slate-50 transition">
+            <tr v-for="u in paginatedUsers" :key="u._id" class="hover:bg-slate-50 transition">
               
               <td class="p-4 pl-6 font-bold text-slate-700">
                 {{ u.username }}
@@ -76,7 +94,7 @@
                     </span>
                   </td>
                   <td class="p-4 text-slate-500 font-mono text-xs">
-                      {{ u.staffId || '--' }}
+                      {{ u.staffId ? u.staffId.slice(-6).toUpperCase() : '--' }}
                   </td>
               </template>
 
@@ -101,14 +119,46 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="!filteredUsers.length">
+            <tr v-if="!paginatedUsers.length">
               <td :colspan="activeTab === 'reader' ? 4 : 5" class="p-8 text-center text-slate-400">
-                Không có tài khoản nào.
+                Không tìm thấy tài khoản nào.
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <div v-if="totalPages > 1" class="p-4 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+         <span class="text-xs text-slate-500">Trang {{ currentPage }} / {{ totalPages }}</span>
+         <div class="flex gap-2">
+            <button 
+                @click="currentPage--" 
+                :disabled="currentPage === 1" 
+                class="px-3 py-1 border rounded bg-white hover:bg-slate-50 text-xs disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+                Trước
+            </button>
+            
+            <button 
+                v-for="page in displayedPages" 
+                :key="page"
+                @click="currentPage = page"
+                class="w-8 h-8 flex items-center justify-center rounded border text-xs font-medium transition"
+                :class="page === currentPage ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-slate-200 hover:bg-slate-50'"
+            >
+                {{ page }}
+            </button>
+
+            <button 
+                @click="currentPage++" 
+                :disabled="currentPage === totalPages" 
+                class="px-3 py-1 border rounded bg-white hover:bg-slate-50 text-xs disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+                Sau
+            </button>
+         </div>
+      </div>
+
     </div>
 
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" @click.self="closeModal">
@@ -162,16 +212,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, watch } from "vue";
 import UserService from "@/services/user.service";
-import StaffService from "@/services/staff.service"; // Để lấy list nhân viên cho dropdown
+import StaffService from "@/services/staff.service";
 import { showToast } from "@/stores/toast";
 
 const users = ref([]);
 const staffList = ref([]);
-const activeTab = ref("reader"); // 'reader' | 'staff'
+const activeTab = ref("reader");
 const showModal = ref(false);
 const editingId = ref(null);
+
+// Pagination & Search State
+const searchText = ref("");
+const currentPage = ref(1);
+const itemsPerPage = 10;
 
 const form = reactive({ 
     username: "", 
@@ -190,14 +245,46 @@ async function load() {
   staffList.value = staffData;
 }
 
-// Filter Users based on Tab
+// 1. Filter Logic (Role + Search)
 const filteredUsers = computed(() => {
+    let data = [];
+    // Lọc theo Role (Tab)
     if (activeTab.value === 'reader') {
-        return users.value.filter(u => u.role === 'user');
+        data = users.value.filter(u => u.role === 'user');
     } else {
-        // Tab staff bao gồm cả admin và các role khác (nếu có sau này)
-        return users.value.filter(u => u.role !== 'user');
+        data = users.value.filter(u => u.role !== 'user');
     }
+
+    // Lọc theo Search Text
+    if (searchText.value) {
+        const lower = searchText.value.toLowerCase();
+        data = data.filter(u => 
+            u.username.toLowerCase().includes(lower) || 
+            (u.fullName && u.fullName.toLowerCase().includes(lower))
+        );
+    }
+    return data;
+});
+
+// 2. Pagination Logic
+const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage) || 1);
+
+const paginatedUsers = computed(() => {
+    const start = (currentPage.value - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredUsers.value.slice(start, end);
+});
+
+const displayedPages = computed(() => {
+    // Logic hiển thị số trang đơn giản
+    if (totalPages.value <= 5) return Array.from({length: totalPages.value}, (_, i) => i + 1);
+    // Nếu nhiều trang hơn có thể thêm logic ...
+    return Array.from({length: totalPages.value}, (_, i) => i + 1); // Hiện tại cứ hiện hết cho đơn giản
+});
+
+// Reset page khi đổi tab hoặc search
+watch([activeTab, searchText], () => {
+    currentPage.value = 1;
 });
 
 function fmtDate(d) {
@@ -229,7 +316,7 @@ function closeModal() {
 async function submit() {
   try {
     const payload = { ...form };
-    if (!payload.password) delete payload.password; // Không gửi pass rỗng khi edit
+    if (!payload.password) delete payload.password;
 
     if (editingId.value) {
       await UserService.update(editingId.value, payload);

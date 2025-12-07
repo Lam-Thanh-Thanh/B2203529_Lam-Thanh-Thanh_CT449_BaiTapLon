@@ -55,22 +55,9 @@
         </div>
       </div>
 
-      <div class="grid lg:grid-cols-3 gap-8">
+      <div class="grid lg:grid-cols-2 gap-8">
         
-        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-          <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <span>📊</span> Thống kê trạng thái phiếu mượn
-          </h3>
-          <div class="h-64 flex justify-center">
-             <Doughnut v-if="chartData.datasets[0].data.some(x => x > 0)" :data="chartData" :options="chartOptions" />
-             <div v-else class="flex flex-col items-center justify-center text-slate-400">
-                <span class="text-4xl mb-2">📉</span>
-                <span>Chưa có đủ dữ liệu biểu đồ</span>
-             </div>
-          </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full">
           <div class="flex justify-between items-center mb-6">
             <h3 class="font-bold text-slate-800 flex items-center gap-2">
               <span>🔥</span> Top Trending Tuần
@@ -78,33 +65,51 @@
             <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded border">Tuần này</span>
           </div>
 
-          <div class="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[300px]">
-            <div v-for="(book, index) in stats.topBooks" :key="index" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
+          <div class="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[400px]"> <div v-for="(book, index) in stats.topBooks" :key="index" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
               <div class="relative flex-shrink-0">
-                <img :src="book.image || 'https://placehold.co/40x60'" class="w-10 h-14 object-cover rounded shadow-sm" />
-                <div class="absolute -top-2 -left-2 w-5 h-5 bg-indigo-600 text-white text-xs font-bold flex items-center justify-center rounded-full shadow-md border-2 border-white">
+                <img :src="book.image || 'https://placehold.co/40x60'" class="w-12 h-16 object-cover rounded shadow-sm" />
+                <div class="absolute -top-2 -left-2 w-6 h-6 bg-indigo-600 text-white text-xs font-bold flex items-center justify-center rounded-full shadow-md border-2 border-white">
                   {{ index + 1 }}
                 </div>
               </div>
               <div class="flex-1 min-w-0">
-                <h4 class="text-sm font-bold text-slate-800 truncate" :title="book.title">{{ book.title }}</h4>
-                <p class="text-xs text-slate-500 truncate">{{ book.author }}</p>
+                <h4 class="text-base font-bold text-slate-800 truncate" :title="book.title">{{ book.title }}</h4>
+                <p class="text-sm text-slate-500 truncate">{{ book.author }}</p>
+                <div class="mt-1 flex items-center gap-2 text-xs text-slate-400">
+                   <span>XB: {{ book.publishedYear || '---' }}</span>
+                </div>
               </div>
               <div class="text-right">
-                <div class="text-sm font-bold text-indigo-600">{{ book.borrowCount }}</div>
+                <div class="text-lg font-bold text-indigo-600">{{ book.borrowCount }}</div>
                 <div class="text-[10px] text-slate-400">lượt</div>
               </div>
             </div>
 
-            <div v-if="!stats.topBooks.length" class="text-center py-8 text-slate-400 text-sm">
+            <div v-if="!stats.topBooks.length" class="text-center py-12 text-slate-400 text-sm flex flex-col items-center">
+              <span class="text-4xl mb-2 opacity-50">📉</span>
               Chưa có dữ liệu mượn tuần này.
             </div>
           </div>
           
-          <router-link to="/admin/borrows" class="mt-4 block w-full py-2 bg-slate-50 text-slate-600 text-center rounded-lg text-xs font-bold hover:bg-indigo-50 hover:text-indigo-600 transition">
+          <router-link to="/admin/borrows" class="mt-4 block w-full py-3 bg-slate-50 text-slate-600 text-center rounded-xl text-sm font-bold hover:bg-indigo-50 hover:text-indigo-600 transition">
             Xem chi tiết mượn trả &rarr;
           </router-link>
         </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full">
+          <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <span>📊</span> Thống kê trạng thái phiếu mượn
+          </h3>
+          <div class="flex-1 flex items-center justify-center min-h-[300px]">
+             <Doughnut v-if="chartData.datasets[0].data.some(x => x > 0)" :data="chartData" :options="chartOptions" />
+             <div v-else class="flex flex-col items-center justify-center text-slate-400">
+                <span class="text-6xl mb-4 opacity-20">📊</span>
+                <span class="font-medium">Chưa có đủ dữ liệu biểu đồ</span>
+                <span class="text-xs mt-1 text-slate-300">Biểu đồ sẽ hiện khi có phiếu mượn</span>
+             </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -131,12 +136,13 @@ const chartData = computed(() => ({
   datasets: [
     {
       backgroundColor: ['#f59e0b', '#3b82f6', '#10b981'], // Amber, Blue, Emerald
+      borderWidth: 0,
+      hoverOffset: 10,
       data: [
         stats.value.counts.pending, 
         stats.value.counts.borrowed, 
         stats.value.counts.returned
-      ],
-      hoverOffset: 4
+      ]
     }
   ]
 }));
@@ -144,12 +150,14 @@ const chartData = computed(() => ({
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  cutout: '70%', // Làm biểu đồ rỗng giữa (Donut) mỏng hơn chút nhìn sang hơn
   plugins: {
     legend: {
       position: 'bottom',
       labels: {
         usePointStyle: true,
-        font: { size: 11 }
+        padding: 20,
+        font: { size: 12, family: "'Inter', sans-serif" }
       }
     }
   }

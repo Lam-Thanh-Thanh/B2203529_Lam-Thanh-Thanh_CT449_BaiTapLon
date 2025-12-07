@@ -146,7 +146,7 @@
               <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center text-2xl mb-6">🚀</div>
               <h3 class="text-3xl font-bold text-slate-900 mb-4">Mượn trả siêu tốc 24/7</h3>
               <p class="text-slate-600 text-lg leading-relaxed mb-6">
-                Quy trình mượn sách được tối ưu hóa hoàn toàn. Đặt lịch online, quét mã QR nhận sách, và gia hạn tự động mà không cần thủ tục rườm rà.
+                Quy trình mượn sách được tối ưu hóa hoàn toàn. Đặt sách online mà không cần thủ tục rườm rà.
               </p>
             </div>
           </div>
@@ -257,6 +257,7 @@ const trendingBooks = ref([]);
 function goToBookDetail(id) {
   if (id) {
     router.push({ name: 'book.details', params: { id } });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 

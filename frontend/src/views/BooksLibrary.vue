@@ -68,56 +68,63 @@
 
             <div v-else>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 lg:gap-8">
-                    <div 
-                        v-for="(book, index) in paginatedBooks" 
-                        :key="book._id"
-                        class="group relative flex flex-col h-full"
-                        data-aos="fade-up"
-                        :data-aos-delay="(index % 10) * 50" 
-                    >
-                        <div class="cursor-pointer aspect-[2/3] rounded-2xl overflow-hidden shadow-md relative bg-slate-100 mb-4 group-hover:shadow-2xl transition-all duration-300 group-hover:-translate-y-2">
-                            <img 
-                                :src="book.image || 'https://placehold.co/400x600?text=No+Cover'" 
-                                class=" w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                                loading="lazy"
-                            >
-                            
-                            <div class="absolute top-3 right-3 flex flex-col items-end gap-1">
-                                 <span v-if="book.copies > 0" class="px-2.5 py-1 bg-emerald-500/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wide rounded-lg shadow-sm">
-                                    Còn hàng
-                                </span>
-                                <span v-else class="px-2.5 py-1 bg-rose-500/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wide rounded-lg shadow-sm">
-                                    Hết sách
-                                </span>
-                            </div>
-    
-                            <div class="absolute inset-0 bg-indigo-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
-                                <button 
-                                    @click="goToDetails(book._id)"
-                                    class="cursor-pointer w-full py-2.5 bg-white text-indigo-900 font-bold rounded-xl shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-sm hover:bg-indigo-50"
-                                >
-                                    Xem chi tiết
-                                </button>
-                            </div>
-                        </div>
-    
-                        <div class="flex-1 flex flex-col">
-                            <h3 class="font-bold text-slate-800 text-base leading-snug mb-1 line-clamp-2 group-hover:text-indigo-600 transition-colors cursor-pointer" @click="goToDetails(book._id)" :title="book.title">
-                                {{ book.title }}
-                            </h3>
-                            <p class="text-sm text-slate-500 mb-3">{{ book.author }}</p>
-                            
-                            <div class="mt-auto pt-3 border-t border-slate-50 flex items-center justify-between text-xs">
-                                <span class="font-semibold text-slate-400 bg-slate-50 px-2 py-1 rounded">
-                                    {{ book.publishedYear || 'N/A' }}
-                                </span>
-                                <span class="font-bold" :class="book.copies > 0 ? 'text-emerald-600' : 'text-rose-500'">
-                                    SL: {{ book.copies }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+            <div 
+                v-for="(book, index) in paginatedBooks" 
+                :key="book._id"
+                class="group relative flex flex-col h-full bg-white border border-slate-200 rounded-2xl p-3 shadow-sm hover:shadow-xl hover:border-indigo-300 transition-all duration-300 hover:-translate-y-1"
+                data-aos="fade-up"
+                :data-aos-delay="(index % 10) * 50" 
+            >
+            <div class="cursor-pointer aspect-[2/3] rounded-xl overflow-hidden relative bg-slate-100 mb-3" @click="goToDetails(book._id)">
+                <img 
+                    :src="book.image || 'https://placehold.co/400x600?text=No+Cover'" 
+                    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    loading="lazy"
+                >
+            <div class="absolute top-2 right-2 flex flex-col items-end gap-1">
+                    <span v-if="book.copies > 0" class="px-2 py-1 bg-emerald-500/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wide rounded-lg shadow-sm">
+                    Còn hàng
+                </span>
+                <span v-else class="px-2 py-1 bg-rose-500/90 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wide rounded-lg shadow-sm">
+                    Hết sách
+                </span>
+            </div>
+
+            <div class="absolute inset-0 bg-indigo-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-4">
+                <button 
+                    @click="goToDetails(book._id)"
+                    class="cursor-pointer w-full py-2 bg-white text-indigo-900 font-bold rounded-lg shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 text-xs hover:bg-indigo-50"
+                >
+                    Xem chi tiết
+                </button>
+            </div>
+        </div>
+
+        <div class="flex-1 flex flex-col px-1">
+            <h3 class="font-bold text-slate-800 text-sm leading-snug mb-1 line-clamp-2 group-hover:text-indigo-600 transition-colors cursor-pointer" @click="goToDetails(book._id)" :title="book.title">
+                {{ book.title }}
+            </h3>
+            
+            <p class="text-xs text-slate-500 mb-2">{{ book.author }}</p>
+            
+            <div class="mt-auto pt-2 border-t border-slate-100 flex flex-col gap-1">
+                <div class="text-lg font-extrabold text-red-600">
+                    {{ book.price ? book.price.toLocaleString() + ' đ' : 'Miễn phí' }}
                 </div>
+                
+                <div class="flex items-center justify-between text-[10px] text-slate-500 mt-1">
+                    <span class="bg-slate-100 px-2 py-1 rounded font-medium text-slate-600">
+                        Năm: {{ book.publishedYear || 'N/A' }}
+                    </span>
+                    <span class="font-bold flex items-center gap-1" :class="book.copies > 0 ? 'text-emerald-600' : 'text-rose-500'">
+                        <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+                        SL: {{ book.copies }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div v-if="totalPages > 1" class="flex justify-center items-center mt-12 gap-2">
                     <button 
@@ -253,6 +260,7 @@ watch(searchText, () => {
 
 function goToDetails(id) {
   router.push({ name: 'book.details', params: { id } });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 onMounted(async () => {
