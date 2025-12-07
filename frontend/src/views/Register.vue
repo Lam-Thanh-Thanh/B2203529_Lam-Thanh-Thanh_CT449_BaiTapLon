@@ -100,7 +100,7 @@
               />
             </div>
             <div>
-              <label class="block text-sm font-bold text-slate-700 mb-1.5">Nhập lại MK</label>
+              <label class="block text-sm font-bold text-slate-700 mb-1.5">Nhập lại mật khẩu</label>
               <input
                 v-model="confirm"
                 type="password"
