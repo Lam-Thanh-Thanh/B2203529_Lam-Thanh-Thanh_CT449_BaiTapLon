@@ -78,18 +78,23 @@
               </p>
             </div>
 
-            <div class="mt-8 pt-8 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
+            <div class=" mt-8 pt-8 border-t border-slate-100 flex flex-col sm:flex-row gap-4">
               <button 
                 @click="handleBorrow"
                 :disabled="book.copies <= 0 || isBorrowing"
-                class="flex-1 px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 transition transform disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                class="cursor-pointer flex-1 px-8 py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-1 transition transform disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
               >
                 <span v-if="isBorrowing" class="animate-spin">⏳</span>
                 <span>{{ book.copies > 0 ? 'Đăng ký Mượn Sách' : 'Hết sách' }}</span>
               </button>
               
-              <button class="px-6 py-4 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:text-rose-500 transition shadow-sm flex items-center gap-2 justify-center">
-                <span>❤️</span> <span>Lưu yêu thích</span>
+              <button 
+                @click="toggleFavorite"
+                class="cursor-pointer px-6 py-4 bg-white border font-bold rounded-xl transition shadow-sm flex items-center gap-2 justify-center"
+                :class="isFavorited ? 'border-rose-200 text-rose-500 bg-rose-50' : 'border-slate-200 text-slate-600 hover:bg-slate-50'"
+              >
+                <span>{{ isFavorited ? '❤️' : '🤍' }}</span> 
+                <span>{{ isFavorited ? 'Đã yêu thích' : 'Lưu yêu thích' }}</span>
               </button>
             </div>
           </div>
@@ -97,7 +102,6 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
         <div class="lg:col-span-2" data-aos="fade-up">
           <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="flex border-b border-slate-100">
@@ -170,9 +174,7 @@
             </div>
           </div>
         </div>
-
       </div>
-
     </div>
 
     <div v-else class="flex flex-col items-center justify-center min-h-[60vh]">
@@ -188,6 +190,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import BookService from '@/services/book.service';
 import BorrowService from '@/services/borrow.service';
+import ReaderService from '@/services/reader.service'; // Đảm bảo đã import
 import { showToast } from '@/stores/toast';
 import { auth } from '@/stores/auth';
 import AOS from 'aos';
@@ -197,6 +200,7 @@ const router = useRouter();
 const book = ref(null);
 const isBorrowing = ref(false);
 const activeTab = ref('Mô tả');
+const isFavorited = ref(false);
 
 const relatedBooks = [
   { title: "Nhà Giả Kim", author: "Paulo Coelho", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=200" },
@@ -206,9 +210,21 @@ const relatedBooks = [
 
 const fetchBook = async () => {
   book.value = null;
-  const id = route.params.id;
+  const id = route.params.id; // Lấy ID sách từ URL
   try {
     book.value = await BookService.get(id);
+    
+    // Kiểm tra trạng thái yêu thích
+    if (auth.user) {
+        try {
+            const favorites = await ReaderService.getFavorites();
+            // So sánh ID sách hiện tại với danh sách yêu thích
+            isFavorited.value = favorites.some(f => f._id === id);
+        } catch (err) {
+            console.error("Lỗi tải danh sách yêu thích", err);
+        }
+    }
+
     setTimeout(() => AOS.refresh(), 100); 
   } catch (error) {
     console.error(error);
@@ -228,7 +244,6 @@ const handleBorrow = async () => {
 
   isBorrowing.value = true;
   try {
-    // Chỉ gửi mã sách, backend tự lấy mã độc giả từ token
     await BorrowService.create({ maSach: book.value._id });
     showToast("Yêu cầu mượn thành công! Vui lòng chờ duyệt.", "success");
   } catch (e) {
@@ -236,6 +251,32 @@ const handleBorrow = async () => {
   } finally {
     isBorrowing.value = false;
   }
+};
+
+// [SỬA LỖI] Sử dụng route.params.id hoặc book.value._id
+const toggleFavorite = async () => {
+    if (!auth.user) {
+        showToast("Vui lòng đăng nhập!", "error");
+        return;
+    }
+    
+    // Lấy ID sách chính xác
+    const bookId = book.value._id; 
+
+    try {
+        if (isFavorited.value) {
+            await ReaderService.removeFavorite(bookId);
+            isFavorited.value = false;
+            showToast("Đã xóa khỏi yêu thích", "info");
+        } else {
+            await ReaderService.addFavorite(bookId);
+            isFavorited.value = true;
+            showToast("Đã thêm vào yêu thích ❤️", "success");
+        }
+    } catch (e) {
+        console.error(e);
+        showToast("Lỗi cập nhật trạng thái yêu thích", "error");
+    }
 };
 
 watch(() => route.params.id, fetchBook);
