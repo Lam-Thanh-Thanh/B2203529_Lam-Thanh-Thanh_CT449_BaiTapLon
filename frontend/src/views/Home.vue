@@ -211,7 +211,7 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, ref } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import { Autoplay, EffectFade, Pagination } from 'swiper/modules';
 import 'swiper/css';
@@ -219,6 +219,7 @@ import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import StatsService from "@/services/stats.service"; // [THÊM]
 
 const modules = [Autoplay, EffectFade, Pagination];
 
@@ -247,20 +248,40 @@ const categories = [
   { name: 'Thiếu nhi', count: 150, icon: '🧸' },
 ];
 
-const trendingBooks = [
-  { title: "Đắc Nhân Tâm", author: "Dale Carnegie", image: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=400" },
-  { title: "Nhà Giả Kim", author: "Paulo Coelho", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400" },
-  { title: "Sapiens", author: "Yuval Noah Harari", image: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=400" },
-  { title: "Atomic Habits", author: "James Clear", image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400" },
-  { title: "Tuổi Trẻ Đáng Giá", author: "Rosie Nguyễn", image: "https://images.unsplash.com/photo-1491841550275-ad7854e35ca6?auto=format&fit=crop&q=80&w=400" },
-  { title: "Rừng Na Uy", author: "Haruki Murakami", image: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80&w=400" },
-  { title: "Hoàng Tử Bé", author: "Antoine de Saint-Exupéry", image: "https://images.unsplash.com/photo-1610882648335-ced8fc8fa6b6?auto=format&fit=crop&q=80&w=400" },
-  { title: "Gatsby Vĩ Đại", author: "F. Scott Fitzgerald", image: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400" }
-];
+const trendingBooks = ref([]);
 
-onMounted(() => {
+// Thay thế onMounted cũ bằng:
+onMounted(async () => {
   AOS.init({ once: true, offset: 50, duration: 800, easing: 'ease-out-cubic' });
+  
+  try {
+    // Gọi API lấy sách trending thật
+    const res = await StatsService.getTrending();
+    
+    // Map dữ liệu để khớp với giao diện (backend trả về field hơi khác một chút)
+    trendingBooks.value = res.map(book => ({
+      title: book.title,
+      author: book.author,
+      image: book.image || 'https://placehold.co/400x600?text=No+Cover',
+      // Có thể thêm logic tính số sao giả lập nếu DB chưa có rating
+      reviews: Math.floor(Math.random() * 100) + 50 
+    }));
+
+    // Nếu không có sách nào được mượn (DB mới), fallback về dữ liệu mẫu để web không trống
+    if (trendingBooks.value.length === 0) {
+        trendingBooks.value = [
+            { title: "Đắc Nhân Tâm", author: "Dale Carnegie", image: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=400" },
+            { title: "Nhà Giả Kim", author: "Paulo Coelho", image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400" },
+            { title: "Sapiens", author: "Yuval Noah Harari", image: "https://images.unsplash.com/photo-1541963463532-d68292c34b19?auto=format&fit=crop&q=80&w=400" },
+            { title: "Atomic Habits", author: "James Clear", image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80&w=400" },
+        ];
+    }
+
+  } catch (e) {
+    console.error("Lỗi tải trending books:", e);
+  }
 });
+
 </script>
 
 <style scoped>

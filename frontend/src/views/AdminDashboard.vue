@@ -1,73 +1,108 @@
 <template>
-  <section class="space-y-6">
-    <h2 class="text-2xl font-bold text-slate-800">Dashboard Tổng quan</h2>
-
-    <div v-if="loading" class="text-center py-10">Đang tải dữ liệu...</div>
-
-    <div v-else class="space-y-6">
-      <div class="grid gap-6 md:grid-cols-3">
-        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg shadow-indigo-200">
-          <div class="text-indigo-100 text-sm font-medium mb-1">Tổng đầu sách</div>
-          <div class="text-4xl font-bold">{{ stats.counts.books }}</div>
-          <div class="mt-4 text-xs bg-white/20 inline-block px-2 py-1 rounded">Kho sách hiện tại</div>
+  <section class="space-y-8 animate-fade-in">
+    <div class="flex justify-between items-end">
+      <div>
+        <h2 class="text-3xl font-bold text-slate-800 tracking-tight">Dashboard Tổng quan</h2>
+        <p class="text-slate-500 mt-1">Chào mừng quay lại, hệ thống đang hoạt động ổn định.</p>
+      </div>
+      <div class="text-right">
+        <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Thời gian thực</div>
+        <div class="text-sm font-mono font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+          {{ currentDate }}
         </div>
-        
-        <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-          <div class="text-slate-500 text-sm font-medium mb-1">Độc giả đăng ký</div>
-          <div class="text-3xl font-bold text-slate-800">{{ stats.counts.readers }}</div>
-          <div class="mt-2 text-xs text-emerald-600 font-medium">Hoạt động tích cực</div>
-        </div>
+      </div>
+    </div>
 
-        <div class="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-          <div class="text-slate-500 text-sm font-medium mb-1">Phiếu mượn</div>
-          <div class="text-3xl font-bold text-slate-800">{{ stats.counts.borrows }}</div>
-          <div class="mt-3 flex gap-2 text-[10px] font-bold">
-            <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Chờ: {{ stats.counts.pending }}</span>
-            <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded">Đang mượn: {{ stats.counts.borrowing }}</span>
+    <div v-if="loading" class="py-20 text-center">
+      <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+      <span class="text-slate-400 font-medium">Đang tổng hợp dữ liệu...</span>
+    </div>
+
+    <div v-else class="space-y-8">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div class="w-14 h-14 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shadow-sm">📚</div>
+          <div>
+            <div class="text-sm text-slate-500 font-medium">Tổng đầu sách</div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.counts.totalBooks }}</div>
           </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div class="w-14 h-14 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl shadow-sm">👥</div>
+          <div>
+            <div class="text-sm text-slate-500 font-medium">Độc giả</div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.counts.totalReaders }}</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+          <div class="w-14 h-14 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl shadow-sm">📄</div>
+          <div>
+            <div class="text-sm text-slate-500 font-medium">Tổng lượt mượn</div>
+            <div class="text-2xl font-bold text-slate-800">{{ stats.counts.totalBorrows }}</div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-2xl shadow-lg shadow-orange-200 text-white flex items-center justify-between gap-4 transform hover:-translate-y-1 transition-transform">
+          <div>
+            <div class="text-orange-100 font-medium text-sm mb-1">Cần xử lý ngay</div>
+            <div class="text-3xl font-bold">{{ stats.counts.pending }}</div>
+            <div class="text-xs text-orange-200 mt-1">Yêu cầu đang chờ duyệt</div>
+          </div>
+          <div class="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center text-2xl backdrop-blur-sm">🔔</div>
         </div>
       </div>
 
-      <div class="grid md:grid-cols-3 gap-6">
-        <div class="md:col-span-2 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
-          <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <span>🏆</span> Sách mượn nhiều trong tháng
+      <div class="grid lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+            <span>📊</span> Thống kê trạng thái phiếu mượn
           </h3>
-          
-          <div class="space-y-4">
-            <div v-for="(book, index) in stats.topBooks" :key="index" class="flex items-center gap-4">
-              <span class="text-lg font-bold text-slate-300 w-6">#{{ index + 1 }}</span>
-              <img 
-                :src="book.image || 'https://placehold.co/40x60'" 
-                class="w-10 h-14 object-cover rounded shadow-sm border border-slate-100"
-              />
-              <div class="flex-1">
-                <div class="flex justify-between mb-1">
-                  <span class="text-sm font-medium text-slate-700 line-clamp-1">{{ book.title }}</span>
-                  <span class="text-xs font-bold text-indigo-600">{{ book.count }} lượt</span>
-                </div>
-                <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div 
-                    class="h-full bg-indigo-500 rounded-full"
-                    :style="{ width: (book.count / (stats.topBooks[0]?.count || 1) * 100) + '%' }"
-                  ></div>
-                </div>
-              </div>
-            </div>
-            
-            <div v-if="!stats.topBooks?.length" class="text-center text-slate-400 text-sm py-4">
-              Chưa có dữ liệu mượn trong tháng này.
-            </div>
+          <div class="h-64 flex justify-center">
+             <Doughnut v-if="chartData.datasets[0].data.some(x => x > 0)" :data="chartData" :options="chartOptions" />
+             <div v-else class="flex flex-col items-center justify-center text-slate-400">
+                <span class="text-4xl mb-2">📉</span>
+                <span>Chưa có đủ dữ liệu biểu đồ</span>
+             </div>
           </div>
         </div>
 
-        <div class="bg-indigo-50 rounded-2xl p-6 border border-indigo-100">
-          <h3 class="font-bold text-indigo-900 mb-2">Ghi chú quản trị</h3>
-          <p class="text-sm text-indigo-700 mb-4">
-            Hệ thống đang hoạt động ổn định. Hãy kiểm tra các phiếu mượn đang ở trạng thái "Chờ duyệt".
-          </p>
-          <router-link to="/admin/borrows" class="block text-center bg-white text-indigo-600 py-2 rounded-lg text-sm font-semibold shadow-sm hover:bg-indigo-50 transition">
-            Xử lý phiếu mượn &rarr;
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+              <span>🔥</span> Top Trending Tuần
+            </h3>
+            <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded border">Tuần này</span>
+          </div>
+
+          <div class="flex-1 overflow-y-auto pr-2 space-y-4 max-h-[300px]">
+            <div v-for="(book, index) in stats.topBooks" :key="index" class="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
+              <div class="relative flex-shrink-0">
+                <img :src="book.image || 'https://placehold.co/40x60'" class="w-10 h-14 object-cover rounded shadow-sm" />
+                <div class="absolute -top-2 -left-2 w-5 h-5 bg-indigo-600 text-white text-xs font-bold flex items-center justify-center rounded-full shadow-md border-2 border-white">
+                  {{ index + 1 }}
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-bold text-slate-800 truncate" :title="book.title">{{ book.title }}</h4>
+                <p class="text-xs text-slate-500 truncate">{{ book.author }}</p>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold text-indigo-600">{{ book.borrowCount }}</div>
+                <div class="text-[10px] text-slate-400">lượt</div>
+              </div>
+            </div>
+
+            <div v-if="!stats.topBooks.length" class="text-center py-8 text-slate-400 text-sm">
+              Chưa có dữ liệu mượn tuần này.
+            </div>
+          </div>
+          
+          <router-link to="/admin/borrows" class="mt-4 block w-full py-2 bg-slate-50 text-slate-600 text-center rounded-lg text-xs font-bold hover:bg-indigo-50 hover:text-indigo-600 transition">
+            Xem chi tiết mượn trả &rarr;
           </router-link>
         </div>
       </div>
@@ -76,14 +111,49 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import StatsService from "@/services/stats.service";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'vue-chartjs';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const stats = ref({
-  counts: {},
+  counts: { totalBooks: 0, totalReaders: 0, totalBorrows: 0, pending: 0, borrowed: 0, returned: 0 },
   topBooks: []
 });
 const loading = ref(true);
+const currentDate = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+// Chart Data
+const chartData = computed(() => ({
+  labels: ['Đang chờ duyệt', 'Đang mượn', 'Đã trả'],
+  datasets: [
+    {
+      backgroundColor: ['#f59e0b', '#3b82f6', '#10b981'], // Amber, Blue, Emerald
+      data: [
+        stats.value.counts.pending, 
+        stats.value.counts.borrowed, 
+        stats.value.counts.returned
+      ],
+      hoverOffset: 4
+    }
+  ]
+}));
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'bottom',
+      labels: {
+        usePointStyle: true,
+        font: { size: 11 }
+      }
+    }
+  }
+};
 
 onMounted(async () => {
   try {

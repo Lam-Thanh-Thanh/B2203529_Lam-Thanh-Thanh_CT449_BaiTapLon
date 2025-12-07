@@ -1,4 +1,3 @@
-// app/services/stats.service.js
 const { ObjectId } = require("mongodb");
 
 class StatsService {
@@ -9,7 +8,21 @@ class StatsService {
     this.Borrow = this.db.collection("borrows");
   }
 
+  // Helper: Tính ngày đầu tuần (Thứ 2) để thống kê theo tuần
+  getStartOfWeek() {
+    const now = new Date();
+    const day = now.getDay(); 
+    // Nếu là Chủ nhật (day=0) thì lùi 6 ngày, ngược lại lùi day-1 ngày để về Thứ 2
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1); 
+    const start = new Date(now.setDate(diff));
+    start.setHours(0, 0, 0, 0);
+    return start;
+  }
+
+  // 1. API cho Admin Dashboard (Tổng quan)
   async getOverview() {
+    const startOfWeek = this.getStartOfWeek();
+
     const [
       totalBooks,
       totalReaders,
@@ -25,26 +38,50 @@ class StatsService {
       this.Borrow.countDocuments({ status: "borrowed" }),
       this.Borrow.countDocuments({ status: "returned" }),
     ]);
-    // --- LOGIC MỚI: Top 5 sách mượn nhiều nhất tháng này ---
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
 
-    const topBooks = await this.Borrow.aggregate([
+    // Top sách mượn nhiều trong tuần cho Admin xem
+    const topBooks = await this.getTopBorrowed(startOfWeek, 5);
+
+    return {
+      counts: {
+        totalBooks,
+        totalReaders,
+        totalBorrows,
+        pending: pendingBorrows,
+        borrowed: borrowedBorrows,
+        returned: returnedBorrows,
+      },
+      topBooks
+    };
+  }
+
+  // 2. API Public cho Trang chủ (Lấy sách Trending) - ĐÂY LÀ HÀM BẠN ĐANG THIẾU
+  async getTrendingBooks(limit = 8) {
+    // Lấy thống kê từ đầu tuần
+    const startOfWeek = this.getStartOfWeek();
+    return await this.getTopBorrowed(startOfWeek, limit);
+  }
+
+  // Logic chung: Aggregation để đếm số lượt mượn
+  async getTopBorrowed(fromDate, limit) {
+    return await this.Borrow.aggregate([
       { 
         $match: { 
-          createdAt: { $gte: startOfMonth } // Lọc phiếu tạo trong tháng
+          // Chỉ lấy các phiếu mượn được tạo từ ngày 'fromDate' trở đi
+          createdAt: { $gte: fromDate } 
         } 
       },
       { 
+        // Nhóm theo mã sách và đếm số lượng
         $group: { 
           _id: "$maSach", 
           count: { $sum: 1 } 
         } 
       },
-      { $sort: { count: -1 } }, // Sắp xếp giảm dần
-      { $limit: 5 }, // Lấy top 5
+      { $sort: { count: -1 } }, // Sắp xếp giảm dần (nhiều nhất lên đầu)
+      { $limit: limit },        // Giới hạn số lượng
       {
+        // Join với bảng 'books' để lấy thông tin chi tiết sách
         $lookup: {
           from: "books",
           localField: "_id",
@@ -52,26 +89,19 @@ class StatsService {
           as: "bookInfo"
         }
       },
-      { $unwind: "$bookInfo" },
+      { $unwind: "$bookInfo" }, // Gỡ mảng
       {
+        // Chọn các trường cần thiết trả về
         $project: {
+          _id: "$bookInfo._id",
           title: "$bookInfo.title",
+          author: "$bookInfo.author",
           image: "$bookInfo.image",
-          count: 1
+          publishedYear: "$bookInfo.publishedYear",
+          borrowCount: "$count" // Số lượt mượn
         }
       }
     ]).toArray();
-    return {
-      counts: { // Gom các số liệu đếm vào 1 object cho gọn
-        totalBooks,
-        totalReaders,
-        totalBorrows,
-        pendingBorrows,
-        borrowedBorrows,
-        returnedBorrows,
-      },
-      topBooks
-    };
   }
 }
 
