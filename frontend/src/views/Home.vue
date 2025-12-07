@@ -82,6 +82,7 @@
               class="group cursor-pointer"
               data-aos="fade-up" 
               :data-aos-delay="index * 50"
+              @click="goToBookDetail(book._id)"
             >
               <div class="aspect-[2/3] rounded-2xl overflow-hidden shadow-md relative bg-slate-200 mb-4 group-hover:shadow-2xl transition-all duration-300">
                 <img :src="book.image" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" :alt="book.title">
@@ -91,7 +92,7 @@
                 </div>
 
                 <div class="absolute inset-0 bg-indigo-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <button class="px-4 py-2 bg-white text-indigo-900 text-xs font-bold rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                  <button class="cursor-pointer px-4 py-2 bg-white text-indigo-900 text-xs font-bold rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                     Xem chi tiết
                   </button>
                 </div>
@@ -219,8 +220,10 @@ import 'swiper/css/effect-fade';
 import 'swiper/css/pagination';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import { useRouter } from 'vue-router'; // [THÊM] Import router
 import StatsService from "@/services/stats.service"; // [THÊM]
 
+const router = useRouter(); // [THÊM] Khởi tạo router
 const modules = [Autoplay, EffectFade, Pagination];
 
 const slides = [
@@ -250,6 +253,13 @@ const categories = [
 
 const trendingBooks = ref([]);
 
+// [THÊM] Hàm chuyển hướng
+function goToBookDetail(id) {
+  if (id) {
+    router.push({ name: 'book.details', params: { id } });
+  }
+}
+
 // Thay thế onMounted cũ bằng:
 onMounted(async () => {
   AOS.init({ once: true, offset: 50, duration: 800, easing: 'ease-out-cubic' });
@@ -260,6 +270,7 @@ onMounted(async () => {
     
     // Map dữ liệu để khớp với giao diện (backend trả về field hơi khác một chút)
     trendingBooks.value = res.map(book => ({
+      _id: book._id, // [QUAN TRỌNG] Lấy _id để chuyển trang
       title: book.title,
       author: book.author,
       image: book.image || 'https://placehold.co/400x600?text=No+Cover',

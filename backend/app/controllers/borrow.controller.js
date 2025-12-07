@@ -54,12 +54,21 @@ exports.findAll = async (req, res, next) => {
 };
 
 
+// Tìm một cuốn sách theo ID
 exports.findOne = async (req, res, next) => {
-  try {
-    const data = await svc().findById(req.params.id);
-    if (!data) return res.status(404).json({ message: "Borrow not found" });
-    res.json(data);
-  } catch (e) { next(e); }
+    try {
+        const bookService = new BookService(MongoDB.client);
+        // Lấy ID từ tham số URL
+        const document = await bookService.findById(req.params.id);
+        if (!document) {
+            return next(new ApiError(404, "Không tìm thấy sách"));
+        }
+        return res.send(document);
+    } catch (error) {
+        return next(
+            new ApiError(500, `Lỗi khi lấy sách với id=${req.params.id}`)
+        );
+    }
 };
 
 exports.approve = async (req, res, next) => {

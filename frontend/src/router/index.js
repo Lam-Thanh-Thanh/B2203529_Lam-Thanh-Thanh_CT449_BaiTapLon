@@ -18,6 +18,8 @@ import AdminPublishers from "@/views/AdminPublishers.vue"; // [Thêm]
 import BooksLibrary from "@/views/BooksLibrary.vue";
 import Home from "@/views/Home.vue"; // File trang chủ mới tạo
 
+import BookDetails from '@/views/BookDetails.vue';
+
 const routes = [
   { path: "/login", component: Login },
   { path: "/register", component: Register },
@@ -38,6 +40,12 @@ const routes = [
         name: "library", // [QUAN TRỌNG] Đặt tên route là 'library' để khớp với lỗi
         component: BooksLibrary 
       },
+      {
+        path: 'library/book/:id',
+        name: 'book.details',
+        component: BookDetails,
+        props: true // Cho phép truyền biến id vào component
+      },
       { 
         path: "history", 
         name: "history", // [THÊM] Nên đặt tên luôn cho chuẩn
@@ -48,6 +56,7 @@ const routes = [
         name: "profile", // [THÊM]
         component: UserProfile 
       },
+      
     ],
   },
 

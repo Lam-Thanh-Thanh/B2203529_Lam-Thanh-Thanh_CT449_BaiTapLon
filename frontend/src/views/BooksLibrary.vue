@@ -81,11 +81,10 @@
 
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                <button 
-                @click="handleBorrow(book)"
-                :disabled="book.copies <= 0"
-                class="bg-white text-indigo-700 font-bold py-2.5 px-6 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:bg-indigo-50 disabled:opacity-75 disabled:cursor-not-allowed"
+                @click="goToDetails(book._id)"
+                class="bg-white text-indigo-700 font-bold py-2.5 px-6 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 hover:bg-indigo-50"
               >
-                {{ book.copies > 0 ? 'Mượn Sách' : 'Tạm Hết' }}
+                Xem chi tiết
               </button>
             </div>
           </div>
@@ -113,14 +112,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router"; // Import useRouter
 import BookService from "@/services/book.service";
-import BorrowService from "@/services/borrow.service";
-import { auth } from "@/stores/auth";
 import { showToast } from "@/stores/toast";
 
 const books = ref([]);
 const searchText = ref("");
 const loading = ref(true);
+const router = useRouter(); // Khởi tạo router
 
 const filteredBooks = computed(() => {
   if (!searchText.value) return books.value;
@@ -131,20 +130,9 @@ const filteredBooks = computed(() => {
   );
 });
 
-async function handleBorrow(book) {
-  if (!auth.user) {
-    showToast("Vui lòng đăng nhập để mượn sách", "error");
-    return;
-  }
-  if (!confirm(`Xác nhận mượn cuốn sách: "${book.title}"?`)) return;
-
-  try {
-    // Chỉ gửi maSach, KHÔNG gửi maDocGia
-    await BorrowService.create({ maSach: book._id });
-    showToast("Gửi yêu cầu mượn thành công! Vui lòng chờ duyệt.", "success");
-  } catch (e) {
-    showToast(e.response?.data?.message || "Lỗi khi mượn sách", "error");
-  }
+// Hàm chuyển hướng sang trang chi tiết
+function goToDetails(id) {
+  router.push({ name: 'book.details', params: { id } });
 }
 
 onMounted(async () => {
